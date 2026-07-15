@@ -58,6 +58,16 @@
             </intent-filter>
         </activity>
 
+        <receiver
+            android:name=".PanelCommandReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="dk.yepzdk.hapanel.SCREEN_OFF" />
+                <action android:name="dk.yepzdk.hapanel.SET_BRIGHTNESS" />
+                <action android:name="dk.yepzdk.hapanel.UPDATE_HA" />
+            </intent-filter>
+        </receiver>
+
         <service
             android:name=".InstallService"
             android:exported="false"

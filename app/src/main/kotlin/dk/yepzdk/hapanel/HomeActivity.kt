@@ -39,6 +39,14 @@ class HomeActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        // Self-heal for the adb `dpm set-device-owner` path, where no
+        // provisioning callback ever fires: apply policies on first landing.
+        val dpm = getSystemService(android.app.admin.DevicePolicyManager::class.java)
+        if (dpm.isDeviceOwnerApp(packageName) &&
+            !dpm.isLockTaskPermitted(KioskSetup.HA_PACKAGE)
+        ) {
+            KioskSetup.run(this, null)
+        }
         if (!launchHa()) {
             InstallService.start(this)
             handler.postDelayed(retry, RETRY_MS)

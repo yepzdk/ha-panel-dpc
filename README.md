@@ -33,15 +33,21 @@ cp keystore.properties.example keystore.properties  # fill in the passwords
 
 The APK lands in `app/build/outputs/apk/release/app-release.apk`.
 
-### 2. Host the APK on your HA instance
+### 2. Serve the APK during provisioning
 
-The setup wizard downloads the DPC over plain unauthenticated HTTP(S), and the
-device is already on your Wi-Fi at that point — HA's `www` folder is perfect:
+The setup wizard downloads the DPC over plain unauthenticated HTTP(S) — it
+cannot authenticate, so a private GitHub release won't work. The device is
+already on your Wi-Fi at that point, and the URL only needs to be live while
+you provision, so an ad-hoc server on your machine is enough:
 
 ```sh
-cp app/build/outputs/apk/release/app-release.apk <ha config>/www/ha-panel-dpc.apk
-# → http://homeassistant.local:8123/local/ha-panel-dpc.apk
+mkdir -p /tmp/dpc && cp app/build/outputs/apk/release/app-release.apk /tmp/dpc/ha-panel-dpc.apk
+python3 -m http.server 8000 -d /tmp/dpc
+# → http://<your-machine's-LAN-IP>:8000/ha-panel-dpc.apk  (Ctrl-C when done)
 ```
+
+Alternative: anything unauthenticated on the LAN works, e.g. HA's `www`
+folder (`config/www/ha-panel-dpc.apk` → `http://homeassistant.local:8123/local/ha-panel-dpc.apk`).
 
 ### 3. Generate the QR code
 

@@ -54,7 +54,7 @@ class HomeActivity : Activity() {
     private fun launchHa(): Boolean {
         val launch = packageManager.getLaunchIntentForPackage(KioskSetup.HA_PACKAGE)
             ?: return false
-        val options = ActivityOptions.makeBasic().apply { isLockTaskEnabled = true }
+        val options = ActivityOptions.makeBasic().apply { setLockTaskEnabled(true) }
         try {
             startActivity(launch, options.toBundle())
         } catch (e: SecurityException) {

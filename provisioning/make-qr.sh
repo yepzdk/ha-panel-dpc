@@ -10,8 +10,11 @@ source local.env
 
 command -v qrencode >/dev/null || { echo "qrencode missing: brew install qrencode"; exit 1; }
 
+# Keystore password from the (gitignored) keystore.properties next to the keystore.
+KEYSTORE_PW=$(grep '^storePassword=' "$(dirname "$KEYSTORE")/keystore.properties" | cut -d= -f2-)
+
 # URL-safe base64 (no padding) of the SHA-256 of the signing certificate.
-CHECKSUM=$(keytool -exportcert -keystore "$KEYSTORE" -alias "$KEY_ALIAS" -rfc 2>/dev/null \
+CHECKSUM=$(keytool -storepass "$KEYSTORE_PW" -exportcert -keystore "$KEYSTORE" -alias "$KEY_ALIAS" -rfc 2>/dev/null \
   | openssl x509 -outform DER \
   | openssl dgst -sha256 -binary \
   | openssl base64 \

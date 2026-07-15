@@ -22,6 +22,17 @@
             </intent-filter>
         </receiver>
 
+        <activity
+            android:name=".HomeActivity"
+            android:exported="true"
+            android:launchMode="singleInstance">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <!-- Android 12+ QR provisioning: both activities are mandatory or provisioning aborts. -->
         <activity
             android:name=".GetProvisioningModeActivity"

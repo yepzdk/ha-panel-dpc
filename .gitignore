@@ -1,0 +1,19 @@
+# Build
+.gradle/
+build/
+local.properties
+
+# Signing — the keystore and its credentials must never be committed
+*.keystore
+*.jks
+keystore.properties
+
+# Provisioning secrets (Wi-Fi credentials) and generated QR codes
+provisioning/local.env
+provisioning/*.png
+provisioning/payload.json
+
+# IDE
+.idea/
+*.iml
+.DS_Store

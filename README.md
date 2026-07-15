@@ -33,21 +33,20 @@ cp keystore.properties.example keystore.properties  # fill in the passwords
 
 The APK lands in `app/build/outputs/apk/release/app-release.apk`.
 
-### 2. Serve the APK during provisioning
+### 2. Publish the APK as a GitHub release
 
-The setup wizard downloads the DPC over plain unauthenticated HTTP(S) — it
-cannot authenticate, so a private GitHub release won't work. The device is
-already on your Wi-Fi at that point, and the URL only needs to be live while
-you provision, so an ad-hoc server on your machine is enough:
+The setup wizard downloads the DPC over plain HTTP(S) and cannot
+authenticate, so the release must be publicly downloadable (this repo is
+public for exactly that reason — no secrets live here):
 
 ```sh
-mkdir -p /tmp/dpc && cp app/build/outputs/apk/release/app-release.apk /tmp/dpc/ha-panel-dpc.apk
-python3 -m http.server 8000 -d /tmp/dpc
-# → http://<your-machine's-LAN-IP>:8000/ha-panel-dpc.apk  (Ctrl-C when done)
+cp app/build/outputs/apk/release/app-release.apk ha-panel-dpc.apk
+gh release create v0.1.0 ha-panel-dpc.apk --title "v0.1.0"
+# → https://github.com/yepzdk/ha-panel-dpc/releases/latest/download/ha-panel-dpc.apk
 ```
 
-Alternative: anything unauthenticated on the LAN works, e.g. HA's `www`
-folder (`config/www/ha-panel-dpc.apk` → `http://homeassistant.local:8123/local/ha-panel-dpc.apk`).
+The QR always points at `releases/latest`, so publishing a new release is all
+it takes to change what future provisions install.
 
 ### 3. Generate the QR code
 

@@ -58,6 +58,8 @@ object KioskSetup {
         dpm.setGlobalSetting(admin, Settings.Global.STAY_ON_WHILE_PLUGGED_IN, plugged.toString())
 
         Log.i(TAG, "Kiosk policies applied")
+
+        InstallService.start(context)
     }
 
     /** Grant the HA app its runtime permissions. Call after the app is installed. */

@@ -69,7 +69,9 @@ contains your Wi-Fi password.
 4. Log in with your dedicated dashboard user, pick the default dashboard.
 5. In Settings → Companion app, enable **Fullscreen** — this hides the
    navigation bar (the back arrow is already inert in lock task mode, but
-   fullscreen removes it entirely).
+   fullscreen removes it entirely). Do this NOW, while the sidebar is
+   reachable: if your dashboard hides the sidebar (e.g. kiosk-mode plugin),
+   this screen has no other practical way in on a locked panel.
 6. In the Companion app sensor settings, enable any sensors you want
    (illuminance for auto-dimming, battery, etc.).
 
@@ -89,11 +91,15 @@ Works only on a freshly reset device with no accounts added.
 - **"Can't set up device" right after scanning** — usually the checksum.
   `make-qr.sh` computes it from the keystore; if you rebuilt with a different
   key, regenerate the QR. The value must be URL-safe base64 without `=` padding.
-- **"Couldn't connect to Wi-Fi"** — open the generated `payload.json` and
-  check the password is *exactly* right: double quotes in `local.env` let
-  bash expand `$` and backticks (use single quotes). If the payload is
-  correct, check the network isn't WPA3-only or hidden — the QR's security
-  type covers WPA/WPA2-PSK.
+- **"Couldn't connect to Wi-Fi"** — two known causes:
+  1. Corrupted password: open the generated `payload.json` and check it is
+     *exactly* right — double quotes in `local.env` let bash expand `$` and
+     backticks (use single quotes).
+  2. WPA3-only (SAE) network: Android's provisioning supports only
+     NONE/WPA/WEP/EAP — `WPA` covers WPA/WPA2-PSK and WPA2+WPA3
+     transition mode, but a WPA3-only SSID cannot work. Provision on a
+     WPA2/transition SSID (guest network is fine) instead.
+  Hidden SSIDs need `"android.app.extra.PROVISIONING_WIFI_HIDDEN": true`.
 - **Download fails** — the APK URL must be reachable *from the panel's Wi-Fi*
   without auth. Test it in a phone browser on that network.
 - **No QR scanner appears when tapping the welcome screen** — the device's

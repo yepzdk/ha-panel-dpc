@@ -104,3 +104,25 @@ automation:
 ```
 
 The trampoline re-pins the dashboard automatically after the update installs.
+
+## Factory reset a panel for re-provisioning
+
+Destructive — wipes the device. The `confirm` extra is mandatory; without it
+the command is ignored. Handy as a script (not an automation) you trigger
+manually when re-testing provisioning:
+
+```yaml
+script:
+  reset_entrance_panel:
+    alias: "Factory reset entrance panel"
+    sequence:
+      - action: notify.mobile_app_entrance_panel
+        data:
+          message: command_broadcast_intent
+          data:
+            intent_package_name: dk.yepzdk.hapanel
+            intent_action: dk.yepzdk.hapanel.FACTORY_RESET
+            intent_extras: "confirm:wipe"
+```
+
+The device reboots into the setup wizard, ready for a fresh QR scan.

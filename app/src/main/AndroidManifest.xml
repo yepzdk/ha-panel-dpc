@@ -71,6 +71,7 @@
                 <action android:name="dk.yepzdk.hapanel.SCREEN_OFF" />
                 <action android:name="dk.yepzdk.hapanel.SET_BRIGHTNESS" />
                 <action android:name="dk.yepzdk.hapanel.UPDATE_HA" />
+                <action android:name="dk.yepzdk.hapanel.FACTORY_RESET" />
             </intent-filter>
         </receiver>
 

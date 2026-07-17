@@ -16,6 +16,8 @@ import android.util.Log
  *                     wake lands straight back on the dashboard)
  * SET_BRIGHTNESS    — extra "brightness" int 0-255
  * UPDATE_HA         — re-download and reinstall the HA app
+ * FACTORY_RESET     — wipe the device for re-provisioning; requires extra
+ *                     confirm="wipe" so a stray broadcast can't nuke a panel
  */
 class PanelCommandReceiver : BroadcastReceiver() {
 
@@ -42,6 +44,16 @@ class PanelCommandReceiver : BroadcastReceiver() {
             }
 
             ACTION_UPDATE_HA -> InstallService.start(context)
+
+            ACTION_FACTORY_RESET -> {
+                if (intent.extras?.get("confirm")?.toString() == "wipe") {
+                    Log.i(KioskSetup.TAG, "Factory reset requested — wiping")
+                    @Suppress("DEPRECATION")
+                    dpm.wipeData(0)
+                } else {
+                    Log.w(KioskSetup.TAG, "FACTORY_RESET without confirm=wipe ignored")
+                }
+            }
         }
     }
 
@@ -49,5 +61,6 @@ class PanelCommandReceiver : BroadcastReceiver() {
         const val ACTION_SCREEN_OFF = "dk.yepzdk.hapanel.SCREEN_OFF"
         const val ACTION_SET_BRIGHTNESS = "dk.yepzdk.hapanel.SET_BRIGHTNESS"
         const val ACTION_UPDATE_HA = "dk.yepzdk.hapanel.UPDATE_HA"
+        const val ACTION_FACTORY_RESET = "dk.yepzdk.hapanel.FACTORY_RESET"
     }
 }

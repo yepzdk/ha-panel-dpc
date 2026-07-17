@@ -67,7 +67,10 @@ contains your Wi-Fi password.
 3. Scan `qr.png`. The device joins Wi-Fi, installs the DPC as device owner,
    the DPC installs the HA app and pins it.
 4. Log in with your dedicated dashboard user, pick the default dashboard.
-5. In the Companion app sensor settings, enable any sensors you want
+5. In Settings → Companion app, enable **Fullscreen** — this hides the
+   navigation bar (the back arrow is already inert in lock task mode, but
+   fullscreen removes it entirely).
+6. In the Companion app sensor settings, enable any sensors you want
    (illuminance for auto-dimming, battery, etc.).
 
 ### Fallback: provisioning over USB
@@ -86,6 +89,11 @@ Works only on a freshly reset device with no accounts added.
 - **"Can't set up device" right after scanning** — usually the checksum.
   `make-qr.sh` computes it from the keystore; if you rebuilt with a different
   key, regenerate the QR. The value must be URL-safe base64 without `=` padding.
+- **"Couldn't connect to Wi-Fi"** — open the generated `payload.json` and
+  check the password is *exactly* right: double quotes in `local.env` let
+  bash expand `$` and backticks (use single quotes). If the payload is
+  correct, check the network isn't WPA3-only or hidden — the QR's security
+  type covers WPA/WPA2-PSK.
 - **Download fails** — the APK URL must be reachable *from the panel's Wi-Fi*
   without auth. Test it in a phone browser on that network.
 - **No QR scanner appears when tapping the welcome screen** — the device's

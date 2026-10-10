@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `FACTORY_RESET` broadcast command (guarded by a `confirm:wipe` extra) so a panel can be wiped for re-provisioning straight from HA — no recovery-mode key combos.
+- README section with ready-to-run Developer tools actions for testing each panel command.
 
 ### Fixed
 

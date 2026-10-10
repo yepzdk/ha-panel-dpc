@@ -89,6 +89,80 @@ adb shell dpm set-device-owner dk.yepzdk.hapanel/.AdminReceiver
 
 Works only on a freshly reset device with no accounts added.
 
+## Testing panel commands
+
+Run each action from **Developer tools → Actions** (YAML mode). Replace
+`notify.mobile_app_kitchen_panel` with the panel's service: find the device
+under Settings → Devices & services → Mobile App. Every provisioning registers
+a new device, so delete stale entries and use the newest — a command sent to a
+stale entry silently goes nowhere. For automations, see
+[docs/automations.md](docs/automations.md).
+
+1. **Delivery check** — opens the profile page. Send `command_webview` without
+   `command` to return to the default dashboard. If nothing happens, the panel
+   is not receiving commands from HA at all, so the steps below cannot work.
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_webview
+     data:
+       command: /profile
+   ```
+
+2. **Screen off**, then **screen on** (Companion app command):
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_broadcast_intent
+     data:
+       intent_package_name: dk.yepzdk.hapanel
+       intent_action: dk.yepzdk.hapanel.SCREEN_OFF
+   ```
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_screen_on
+   ```
+
+3. **Brightness** 0–255; set it back to `255` afterwards:
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_broadcast_intent
+     data:
+       intent_package_name: dk.yepzdk.hapanel
+       intent_action: dk.yepzdk.hapanel.SET_BRIGHTNESS
+       intent_extras: "brightness:30"
+   ```
+
+4. **Update the HA app** — re-downloads and reinstalls it. The dashboard
+   disappears while it reinstalls, then HA comes back pinned:
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_broadcast_intent
+     data:
+       intent_package_name: dk.yepzdk.hapanel
+       intent_action: dk.yepzdk.hapanel.UPDATE_HA
+   ```
+
+5. **Factory reset** — wipes the panel back to the welcome screen. Run last:
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_broadcast_intent
+     data:
+       intent_package_name: dk.yepzdk.hapanel
+       intent_action: dk.yepzdk.hapanel.FACTORY_RESET
+       intent_extras: "confirm:wipe"
+   ```
+
 ## Troubleshooting provisioning
 
 - **"Can't set up device" right after scanning** — usually the checksum.

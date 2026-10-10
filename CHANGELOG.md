@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - QR payload generation corrupted Wi-Fi credentials containing shell/sed special characters; values are now JSON-encoded properly. `WIFI_SECURITY` is also configurable.
+- QR-provisioned panels booted back to the welcome screen after a restart: the HA app was pinned on top of the unfinished setup wizard. The panel now waits until setup is complete.
 
 ### Added
 

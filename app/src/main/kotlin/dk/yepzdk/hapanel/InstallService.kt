@@ -110,10 +110,15 @@ class InstallService : Service() {
                 Log.i(KioskSetup.TAG, "HA app installed")
                 KioskSetup.grantHaPermissions(context)
                 // Land back in the trampoline, which pins the freshly installed app.
-                context.startActivity(
-                    Intent(context, HomeActivity::class.java)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                )
+                // Not while provisioning: the setup wizard is still running, and
+                // covering it means setup never completes. The wizard lands on
+                // HOME (the trampoline) itself when it finishes.
+                if (KioskSetup.isSetupComplete(context)) {
+                    context.startActivity(
+                        Intent(context, HomeActivity::class.java)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                    )
+                }
             } else {
                 val msg = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
                 Log.e(KioskSetup.TAG, "HA app install failed: status=$status $msg")

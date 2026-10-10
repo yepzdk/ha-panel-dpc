@@ -65,14 +65,17 @@ contains your Wi-Fi password.
 2. On the "Hi there" welcome screen, tap the same spot **6 times** — a QR
    scanner opens.
 3. Scan `qr.png`. The device joins Wi-Fi, installs the DPC as device owner,
-   the DPC installs the HA app and pins it.
-4. Log in with your dedicated dashboard user, pick the default dashboard.
-5. In Settings → Companion app, enable **Fullscreen** — this hides the
+   and the DPC installs the HA app in the background.
+4. Finish the remaining setup wizard screens. The DPC pins the HA app only
+   once setup is complete — a wizard left unfinished boots back to the
+   welcome screen on the next restart.
+5. Log in with your dedicated dashboard user, pick the default dashboard.
+6. In Settings → Companion app, enable **Fullscreen** — this hides the
    navigation bar (the back arrow is already inert in lock task mode, but
    fullscreen removes it entirely). Do this NOW, while the sidebar is
    reachable: if your dashboard hides the sidebar (e.g. kiosk-mode plugin),
    this screen has no other practical way in on a locked panel.
-6. In the Companion app sensor settings, enable any sensors you want
+7. In the Companion app sensor settings, enable any sensors you want
    (illuminance for auto-dimming, battery, etc.).
 
 ### Fallback: provisioning over USB
@@ -107,6 +110,9 @@ Works only on a freshly reset device with no accounts added.
   fallback above.
 - **Provisioning "not supported"** — check the device declares device admin:
   `adb shell pm list features | grep device_admin`.
+- **Panel boots to the welcome screen after a restart** — the setup wizard
+  was never completed. Earlier DPC builds pinned HA on top of the wizard
+  mid-setup; re-provision with a current build and finish the wizard.
 - **"This device belongs to your organization" screens** — expected on
   Android 12+, not an error.
 

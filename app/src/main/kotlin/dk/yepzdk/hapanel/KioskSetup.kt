@@ -23,6 +23,10 @@ object KioskSetup {
     /** Admin-extras key for the HA APK download URL (optional QR override). */
     const val EXTRA_HA_APK_URL = "ha_apk_url"
 
+    // Settings.Secure.USER_SETUP_COMPLETE is a hidden SystemApi constant, but
+    // the key is annotated @Readable, so apps may read it by name.
+    private const val USER_SETUP_COMPLETE = "user_setup_complete"
+
     fun run(context: Context, adminExtras: PersistableBundle?) {
         persistExtras(context, adminExtras)
 
@@ -76,6 +80,14 @@ object KioskSetup {
             )
         }
     }
+
+    /**
+     * True once the setup wizard has finished. During QR provisioning our code
+     * runs mid-wizard; pinning HA then covers the wizard, setup never completes,
+     * and the device boots back to the welcome screen.
+     */
+    fun isSetupComplete(context: Context): Boolean =
+        Settings.Secure.getInt(context.contentResolver, USER_SETUP_COMPLETE, 0) == 1
 
     fun haApkUrl(context: Context): String? =
         context.getSharedPreferences("config", Context.MODE_PRIVATE)

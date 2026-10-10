@@ -61,6 +61,11 @@ object KioskSetup {
             BatteryManager.BATTERY_PLUGGED_WIRELESS
         dpm.setGlobalSetting(admin, Settings.Global.STAY_ON_WHILE_PLUGGED_IN, plugged.toString())
 
+        // Stay-on keeps the device awake, but PowerManager still dims the
+        // screen once the screen-off timeout passes. Max it out so the panel
+        // stays bright; HA turns the screen off explicitly (SCREEN_OFF).
+        dpm.setSystemSetting(admin, Settings.System.SCREEN_OFF_TIMEOUT, Int.MAX_VALUE.toString())
+
         Log.i(TAG, "Kiosk policies applied")
 
         InstallService.start(context)

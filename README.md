@@ -122,7 +122,7 @@ Works only on a freshly reset device with no accounts added.
 | --- | --- |
 | `AdminReceiver` | Device-owner identity; legacy (Android 9–11) provisioning hook |
 | `GetProvisioningModeActivity` / `PolicyComplianceActivity` | Android 12+ QR provisioning flow |
-| `KioskSetup` | Applies all policies: lock task allowlist, persistent HOME, keyguard/status bar off, stay-on-while-plugged |
+| `KioskSetup` | Applies all policies: lock task allowlist, persistent HOME, keyguard/status bar off, stay-on-while-plugged, no screen dimming |
 | `InstallService` | Downloads + silently installs the HA Companion APK |
 | `HomeActivity` | Persistent HOME trampoline — anything that lands on "home" re-pins the HA app |
 | `PanelCommandReceiver` | HA-driven commands: `SCREEN_OFF`, `SET_BRIGHTNESS`, `UPDATE_HA` |

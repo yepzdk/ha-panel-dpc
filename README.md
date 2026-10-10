@@ -125,7 +125,7 @@ Works only on a freshly reset device with no accounts added.
 | `KioskSetup` | Applies all policies: lock task allowlist, persistent HOME, keyguard/status bar off, stay-on-while-plugged, no screen dimming |
 | `InstallService` | Downloads + silently installs the HA Companion APK |
 | `HomeActivity` | Persistent HOME trampoline — anything that lands on "home" re-pins the HA app |
-| `PanelCommandReceiver` | HA-driven commands: `SCREEN_OFF`, `SET_BRIGHTNESS`, `UPDATE_HA` |
+| `PanelCommandReceiver` | HA-driven commands: `SCREEN_OFF`, `SET_BRIGHTNESS`, `UPDATE_HA`, `FACTORY_RESET` |
 | `provisioning/make-qr.sh` | Renders the provisioning QR from your local config |
 
 Development builds: `export JAVA_HOME=$(/usr/libexec/java_home -v 17+)` (or a

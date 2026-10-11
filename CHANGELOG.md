@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `UPDATE_PANEL` updates the DPC over the air from its latest release, or from a given URL to try a build first, so a panel no longer has to be re-provisioned for each new version.
+- `SCREEN_ON` wakes a blanked panel, and `SET_BRIGHTNESS` accepts `auto` to hand brightness back to the light sensor.
+
+### Changed
+
+- `SCREEN_OFF` covers the dashboard with a black overlay instead of putting the device to sleep. Sleep cut the Companion app's connection, so HA could not wake the panel again. A tap also wakes it.
+- The README's delivery check uses a brightness change: `command_webview` does nothing on a panel, as the HA app lacks the overlay permission it needs.
+
 ## [0.3.0] - 2026-10-10
 
 ### Added

@@ -69,9 +69,29 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="dk.yepzdk.hapanel.SCREEN_OFF" />
+                <action android:name="dk.yepzdk.hapanel.SCREEN_ON" />
                 <action android:name="dk.yepzdk.hapanel.SET_BRIGHTNESS" />
                 <action android:name="dk.yepzdk.hapanel.UPDATE_HA" />
+                <action android:name="dk.yepzdk.hapanel.UPDATE_PANEL" />
                 <action android:name="dk.yepzdk.hapanel.FACTORY_RESET" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Screen-off overlay. Its own pinned task on top of the dashboard;
+             finishing it returns to the pinned HA app. -->
+        <activity
+            android:name=".ScreenOffActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:lockTaskMode="if_whitelisted"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
+
+        <receiver
+            android:name=".PackageReplacedReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
 

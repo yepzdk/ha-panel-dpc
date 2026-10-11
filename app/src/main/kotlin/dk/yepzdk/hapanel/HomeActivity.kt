@@ -45,11 +45,11 @@ class HomeActivity : Activity() {
         if (dpm.isDeviceOwnerApp(packageName) &&
             !dpm.isLockTaskPermitted(KioskSetup.HA_PACKAGE)
         ) {
-            KioskSetup.run(this, null)
+            KioskSetup.applyPolicies(this)
         }
         if (launchIfReady()) return
         if (packageManager.getLaunchIntentForPackage(KioskSetup.HA_PACKAGE) == null) {
-            InstallService.start(this)
+            InstallService.startHa(this)
         }
         handler.postDelayed(retry, RETRY_MS)
     }

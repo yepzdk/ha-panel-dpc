@@ -10,8 +10,8 @@ no Google Play needed) and pins it fullscreen in lock task mode:
 
 - No status bar, no navigation escape, survives reboots and app updates
 - No Google account, no Play Store, no per-device fiddling
-- Screen on/off, brightness, and app updates driven by HA automations
-  (see [docs/automations.md](docs/automations.md))
+- Screen on/off, brightness, and updates of both the HA app and the DPC itself
+  driven by HA automations (see [docs/automations.md](docs/automations.md))
 
 ## One-time setup
 
@@ -46,7 +46,10 @@ gh release create v0.1.0 ha-panel-dpc.apk --title "v0.1.0"
 ```
 
 The QR always points at `releases/latest`, so publishing a new release is all
-it takes to change what future provisions install.
+it takes to change what future provisions install. Provisioned panels update
+over the air with `UPDATE_PANEL` (see [Testing panel commands](#testing-panel-commands)).
+Bump `versionCode` in `app/build.gradle.kts` for every published build:
+Android refuses to install a lower or equal one over the installed version.
 
 ### 3. Generate the QR code
 
@@ -98,19 +101,43 @@ a new device, so delete stale entries and use the newest — a command sent to a
 stale entry silently goes nowhere. For automations, see
 [docs/automations.md](docs/automations.md).
 
-1. **Delivery check** — opens the profile page. Send `command_webview` without
-   `command` to return to the default dashboard. If nothing happens, the panel
-   is not receiving commands from HA at all, so the steps below cannot work.
+Enable the panel's **Screen brightness** sensor (in the entity's settings in
+HA) to see results without walking to the panel. The app reports it on its
+next sensor update, so allow a few seconds.
+
+1. **Delivery check** — set a brightness and watch the sensor follow. If the
+   action fails with "not connected to local push notifications", or the
+   sensor does not change, the panel is not receiving commands and the steps
+   below cannot work.
 
    ```yaml
    action: notify.mobile_app_kitchen_panel
    data:
-     message: command_webview
+     message: command_broadcast_intent
      data:
-       command: /profile
+       intent_package_name: dk.yepzdk.hapanel
+       intent_action: dk.yepzdk.hapanel.SET_BRIGHTNESS
+       intent_extras: "brightness:128"
    ```
 
-2. **Screen off**, then **screen on** (Companion app command):
+   Not `command_webview`: it needs "Display over other apps" for the HA app,
+   which the DPC does not grant, so it does nothing on a panel.
+
+2. **Brightness** 0–255, or `auto` to hand control back to the light sensor:
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_broadcast_intent
+     data:
+       intent_package_name: dk.yepzdk.hapanel
+       intent_action: dk.yepzdk.hapanel.SET_BRIGHTNESS
+       intent_extras: "brightness:auto"
+   ```
+
+3. **Screen off**, then **screen on**. Off is a black overlay with the
+   backlight at its minimum; the device stays awake, so HA can still wake it.
+   A tap on the panel wakes it too.
 
    ```yaml
    action: notify.mobile_app_kitchen_panel
@@ -124,20 +151,13 @@ stale entry silently goes nowhere. For automations, see
    ```yaml
    action: notify.mobile_app_kitchen_panel
    data:
-     message: command_screen_on
-   ```
-
-3. **Brightness** 0–255; set it back to `255` afterwards:
-
-   ```yaml
-   action: notify.mobile_app_kitchen_panel
-   data:
      message: command_broadcast_intent
      data:
        intent_package_name: dk.yepzdk.hapanel
-       intent_action: dk.yepzdk.hapanel.SET_BRIGHTNESS
-       intent_extras: "brightness:30"
+       intent_action: dk.yepzdk.hapanel.SCREEN_ON
    ```
+
+   The Companion app's own `command_screen_on` does not remove the overlay.
 
 4. **Update the HA app** — re-downloads and reinstalls it. The dashboard
    disappears while it reinstalls, then HA comes back pinned:
@@ -151,7 +171,31 @@ stale entry silently goes nowhere. For automations, see
        intent_action: dk.yepzdk.hapanel.UPDATE_HA
    ```
 
-5. **Factory reset** — wipes the panel back to the welcome screen. Run last:
+5. **Update the DPC** — installs the latest release. The panel shows "Panel
+   updated to x.y.z" and returns to the dashboard:
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_broadcast_intent
+     data:
+       intent_package_name: dk.yepzdk.hapanel
+       intent_action: dk.yepzdk.hapanel.UPDATE_PANEL
+   ```
+
+   To try a build before releasing it, pass its URL. Keep the `:String`
+   suffix: the Companion app splits extras on `:`, and the suffix makes it
+   join the URL back together.
+
+   ```yaml
+       intent_extras: "url:https://github.com/yepzdk/ha-panel-dpc/releases/download/v0.4.1-rc.1/ha-panel-dpc.apk:String"
+   ```
+
+   The build must be signed with the release key and have a higher
+   `versionCode`. Android refuses anything else, and the panel keeps running
+   the version it has.
+
+6. **Factory reset** — wipes the panel back to the welcome screen. Run last:
 
    ```yaml
    action: notify.mobile_app_kitchen_panel
@@ -197,9 +241,11 @@ stale entry silently goes nowhere. For automations, see
 | `AdminReceiver` | Device-owner identity; legacy (Android 9–11) provisioning hook |
 | `GetProvisioningModeActivity` / `PolicyComplianceActivity` | Android 12+ QR provisioning flow |
 | `KioskSetup` | Applies all policies: lock task allowlist, persistent HOME, keyguard/status bar off, stay-on-while-plugged, no screen dimming |
-| `InstallService` | Downloads + silently installs the HA Companion APK |
+| `InstallService` | Downloads + silently installs the HA Companion APK, or a new version of the DPC itself |
 | `HomeActivity` | Persistent HOME trampoline — anything that lands on "home" re-pins the HA app |
-| `PanelCommandReceiver` | HA-driven commands: `SCREEN_OFF`, `SET_BRIGHTNESS`, `UPDATE_HA`, `FACTORY_RESET` |
+| `ScreenOffActivity` | Black overlay for `SCREEN_OFF`; the device stays awake so HA can wake it again |
+| `PackageReplacedReceiver` | After a DPC update: re-applies policies and re-pins the dashboard |
+| `PanelCommandReceiver` | HA-driven commands: `SCREEN_OFF`, `SCREEN_ON`, `SET_BRIGHTNESS`, `UPDATE_HA`, `UPDATE_PANEL`, `FACTORY_RESET` |
 | `provisioning/make-qr.sh` | Renders the provisioning QR from your local config |
 
 Development builds: `export JAVA_HOME=$(/usr/libexec/java_home -v 17+)` (or a

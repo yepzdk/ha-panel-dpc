@@ -12,10 +12,12 @@ import android.util.Log
  * notification. Exported by necessity so the HA app can reach it; the only
  * other apps on a provisioned panel are ours.
  *
- * SCREEN_OFF        — blank the screen (lockNow; keyguard is disabled, so any
- *                     wake lands straight back on the dashboard)
- * SET_BRIGHTNESS    — extra "brightness" int 0-255
+ * SCREEN_OFF        — blank the screen with a black overlay (ScreenOffActivity);
+ *                     the device stays awake so HA can still reach it
+ * SCREEN_ON         — remove the overlay (a tap on the panel does the same)
+ * SET_BRIGHTNESS    — extra "brightness": int 0-255, or "auto" for the light sensor
  * UPDATE_HA         — re-download and reinstall the HA app
+ * UPDATE_PANEL      — update this app; optional extra "url" (default: latest release)
  * FACTORY_RESET     — wipe the device for re-provisioning; requires extra
  *                     confirm="wipe" so a stray broadcast can't nuke a panel
  */
@@ -27,15 +29,21 @@ class PanelCommandReceiver : BroadcastReceiver() {
         val admin = AdminReceiver.component(context)
 
         when (intent.action) {
-            ACTION_SCREEN_OFF -> dpm.lockNow()
+            ACTION_SCREEN_OFF -> ScreenOffActivity.show(context)
+
+            ACTION_SCREEN_ON -> ScreenOffActivity.dismiss()
 
             ACTION_SET_BRIGHTNESS -> {
                 // HA's intent_extras may arrive typed as string or int — accept both.
                 @Suppress("DEPRECATION")
-                val value = intent.extras?.get("brightness")?.toString()?.toIntOrNull()
-                    ?.takeIf { it in 0..255 }
+                val raw = intent.extras?.get("brightness")?.toString()
+                if (raw == "auto") {
+                    dpm.setSystemSetting(admin, Settings.System.SCREEN_BRIGHTNESS_MODE, "1")
+                    return
+                }
+                val value = raw?.toIntOrNull()?.takeIf { it in 0..255 }
                 if (value == null) {
-                    Log.w(KioskSetup.TAG, "SET_BRIGHTNESS without valid 0-255 extra")
+                    Log.w(KioskSetup.TAG, "SET_BRIGHTNESS without 0-255 or auto extra")
                     return
                 }
                 // Manual mode first, or automatic brightness overrides the value.
@@ -43,7 +51,9 @@ class PanelCommandReceiver : BroadcastReceiver() {
                 dpm.setSystemSetting(admin, Settings.System.SCREEN_BRIGHTNESS, value.toString())
             }
 
-            ACTION_UPDATE_HA -> InstallService.start(context)
+            ACTION_UPDATE_HA -> InstallService.startHa(context)
+
+            ACTION_UPDATE_PANEL -> InstallService.startSelf(context, intent.getStringExtra("url"))
 
             ACTION_FACTORY_RESET -> {
                 if (intent.extras?.get("confirm")?.toString() == "wipe") {
@@ -59,8 +69,10 @@ class PanelCommandReceiver : BroadcastReceiver() {
 
     companion object {
         const val ACTION_SCREEN_OFF = "dk.yepzdk.hapanel.SCREEN_OFF"
+        const val ACTION_SCREEN_ON = "dk.yepzdk.hapanel.SCREEN_ON"
         const val ACTION_SET_BRIGHTNESS = "dk.yepzdk.hapanel.SET_BRIGHTNESS"
         const val ACTION_UPDATE_HA = "dk.yepzdk.hapanel.UPDATE_HA"
+        const val ACTION_UPDATE_PANEL = "dk.yepzdk.hapanel.UPDATE_PANEL"
         const val ACTION_FACTORY_RESET = "dk.yepzdk.hapanel.FACTORY_RESET"
     }
 }

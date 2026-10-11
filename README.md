@@ -49,7 +49,9 @@ The QR always points at `releases/latest`, so publishing a new release is all
 it takes to change what future provisions install. Provisioned panels update
 over the air with `UPDATE_PANEL` (see [Testing panel commands](#testing-panel-commands)).
 Bump `versionCode` in `app/build.gradle.kts` for every published build:
-Android refuses to install a lower one over the installed version.
+Android refuses to install a lower one over the installed version. GitHub
+takes about a minute to point `releases/latest` at a new release; an update
+sent before then installs the previous one again.
 
 ### 3. Generate the QR code
 

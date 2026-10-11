@@ -187,12 +187,13 @@ next sensor update, so allow a few seconds.
        intent_action: dk.yepzdk.hapanel.UPDATE_PANEL
    ```
 
-   To try a build before releasing it, pass its URL. Keep the `:String`
-   suffix: the Companion app splits extras on `:`, and the suffix makes it
-   join the URL back together.
+   To try a build before releasing it, publish it as a pre-release (it never
+   becomes `releases/latest`) and pass its URL. Keep the `:String` suffix: the
+   Companion app splits extras on `:`, and the suffix makes it join the URL
+   back together.
 
    ```yaml
-       intent_extras: "url:https://github.com/yepzdk/ha-panel-dpc/releases/download/v0.4.1-rc.1/ha-panel-dpc.apk:String"
+       intent_extras: "url:https://github.com/yepzdk/ha-panel-dpc/releases/download/<tag>/ha-panel-dpc.apk:String"
    ```
 
    The build must be signed with the release key and have the same or a

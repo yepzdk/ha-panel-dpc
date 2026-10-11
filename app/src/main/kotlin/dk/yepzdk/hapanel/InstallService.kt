@@ -10,9 +10,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInstaller
 import android.content.pm.ServiceInfo
+import android.net.Uri
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
+import android.widget.Toast
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
@@ -37,14 +41,20 @@ class InstallService : Service() {
         val self = intent?.getStringExtra(EXTRA_TARGET) == TARGET_SELF
         startForegroundWithNotification(self)
         if (busy.compareAndSet(false, true)) {
-            val url = if (self) intent?.getStringExtra(EXTRA_URL) ?: PANEL_APK_URL
+            val custom = if (self) intent?.getStringExtra(EXTRA_URL) else null
+            val url = if (self) custom ?: PANEL_APK_URL
             else KioskSetup.haApkUrl(this) ?: HA_APK_URL
             val pkg = if (self) packageName else KioskSetup.HA_PACKAGE
+            // The panel has no status bar, so a toast is the only feedback on it.
+            if (self) {
+                toast(this, if (custom == null) "Updating panel…" else "Updating panel from ${Uri.parse(custom).host}…")
+            }
             Thread {
                 try {
                     downloadAndInstall(url, pkg, self)
                 } catch (e: Exception) {
                     Log.e(KioskSetup.TAG, "Install of $pkg failed", e)
+                    toast(this, "${label(self)} failed: ${e.message ?: e.javaClass.simpleName}")
                 } finally {
                     busy.set(false)
                     stopSelf()
@@ -52,6 +62,7 @@ class InstallService : Service() {
             }.start()
         } else {
             Log.w(KioskSetup.TAG, "Install already running — ignoring request")
+            toast(this, "An update is already running")
         }
         return START_NOT_STICKY
     }
@@ -124,6 +135,7 @@ class InstallService : Service() {
             if (status != PackageInstaller.STATUS_SUCCESS) {
                 val msg = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
                 Log.e(KioskSetup.TAG, "Install of $target failed: status=$status $msg")
+                toast(context, "${label(target == TARGET_SELF)} failed: ${msg ?: "status $status"}")
                 return
             }
             // Self-update success is handled by PackageReplacedReceiver in the new version.
@@ -172,6 +184,14 @@ class InstallService : Service() {
                     .putExtra(EXTRA_TARGET, TARGET_SELF)
                     .putExtra(EXTRA_URL, url),
             )
+        }
+
+        private fun label(self: Boolean) = if (self) "Panel update" else "Home Assistant install"
+
+        /** Safe from any thread; the installer works on a background thread. */
+        private fun toast(context: Context, text: String) {
+            val app = context.applicationContext
+            Handler(Looper.getMainLooper()).post { Toast.makeText(app, text, Toast.LENGTH_LONG).show() }
         }
     }
 }

@@ -49,7 +49,7 @@ The QR always points at `releases/latest`, so publishing a new release is all
 it takes to change what future provisions install. Provisioned panels update
 over the air with `UPDATE_PANEL` (see [Testing panel commands](#testing-panel-commands)).
 Bump `versionCode` in `app/build.gradle.kts` for every published build:
-Android refuses to install a lower or equal one over the installed version.
+Android refuses to install a lower one over the installed version.
 
 ### 3. Generate the QR code
 
@@ -171,8 +171,10 @@ next sensor update, so allow a few seconds.
        intent_action: dk.yepzdk.hapanel.UPDATE_HA
    ```
 
-5. **Update the DPC** — installs the latest release. The panel shows "Panel
-   updated to x.y.z" and returns to the dashboard:
+5. **Update the DPC** — installs the latest release. The panel shows
+   "Updating panel…", then "Panel updated to x.y.z", and returns to the
+   dashboard. A failed download or install shows "Panel update failed" with
+   the reason:
 
    ```yaml
    action: notify.mobile_app_kitchen_panel
@@ -191,9 +193,9 @@ next sensor update, so allow a few seconds.
        intent_extras: "url:https://github.com/yepzdk/ha-panel-dpc/releases/download/v0.4.1-rc.1/ha-panel-dpc.apk:String"
    ```
 
-   The build must be signed with the release key and have a higher
-   `versionCode`. Android refuses anything else, and the panel keeps running
-   the version it has.
+   The build must be signed with the release key and have the same or a
+   higher `versionCode`. Android refuses anything else, and the panel keeps
+   running the version it has.
 
 6. **Factory reset** — wipes the panel back to the welcome screen. Run last:
 

@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-10-11
+
+### Added
+
+- The panel shows a short message when an update starts, and the reason when an update of the DPC or the HA app fails; the panel has no status bar to show progress.
+
+## [0.4.1] - 2026-10-11
+
+### Fixed
+
+- `SCREEN_ON` did not remove the screen-off overlay; the panel stayed black until tapped.
+
+## [0.4.0] - 2026-10-11
+
+### Added
+
+- `UPDATE_PANEL` updates the DPC over the air from its latest release, or from a given URL to try a build first, so a panel no longer has to be re-provisioned for each new version.
+- `SCREEN_ON` wakes a blanked panel, and `SET_BRIGHTNESS` accepts `auto` to hand brightness back to the light sensor.
+
+### Changed
+
+- `SCREEN_OFF` covers the dashboard with a black overlay instead of putting the device to sleep. Sleep cut the Companion app's connection, so HA could not wake the panel again. A tap also wakes it.
+- The README's delivery check uses a brightness change: `command_webview` does nothing on a panel, as the HA app lacks the overlay permission it needs.
+
 ## [0.3.0] - 2026-10-10
 
 ### Added
@@ -40,7 +64,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Provisioning tooling: QR payload template and `make-qr.sh`, plus signing config.
 - Docs: README provisioning walkthrough and ready-to-paste HA automations.
 
-[Unreleased]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.4.1...v0.4.2
+[0.4.1]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/yepzdk/ha-panel-dpc/releases/tag/v0.1.0

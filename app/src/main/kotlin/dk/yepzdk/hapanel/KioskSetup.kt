@@ -27,13 +27,21 @@ object KioskSetup {
     // the key is annotated @Readable, so apps may read it by name.
     private const val USER_SETUP_COMPLETE = "user_setup_complete"
 
+    /** Provisioning entry point: store the QR extras, apply policies, install the HA app. */
     fun run(context: Context, adminExtras: PersistableBundle?) {
         persistExtras(context, adminExtras)
+        if (applyPolicies(context)) InstallService.startHa(context)
+    }
 
+    /**
+     * Apply every device-owner policy. Idempotent; also runs after a self-update.
+     * @return false if we are not device owner (nothing applied).
+     */
+    fun applyPolicies(context: Context): Boolean {
         val dpm = context.getSystemService(DevicePolicyManager::class.java)
         if (!dpm.isDeviceOwnerApp(context.packageName)) {
             Log.w(TAG, "Not device owner — skipping policy setup")
-            return
+            return false
         }
         val admin = AdminReceiver.component(context)
 
@@ -63,12 +71,11 @@ object KioskSetup {
 
         // Stay-on keeps the device awake, but PowerManager still dims the
         // screen once the screen-off timeout passes. Max it out so the panel
-        // stays bright; HA turns the screen off explicitly (SCREEN_OFF).
+        // stays bright; HA blanks it explicitly (SCREEN_OFF).
         dpm.setSystemSetting(admin, Settings.System.SCREEN_OFF_TIMEOUT, Int.MAX_VALUE.toString())
 
         Log.i(TAG, "Kiosk policies applied")
-
-        InstallService.start(context)
+        return true
     }
 
     /** Grant the HA app its runtime permissions. Call after the app is installed. */

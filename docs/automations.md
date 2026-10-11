@@ -10,7 +10,7 @@ it is what delivers commands without Google Play Services.
 
 Replace `notify.mobile_app_entrance_panel` with your panel's service.
 
-## Wake screen on motion / presence
+## Wake screen on motion / presence (DPC broadcast)
 
 ```yaml
 automation:
@@ -22,12 +22,17 @@ automation:
     actions:
       - action: notify.mobile_app_entrance_panel
         data:
-          message: command_screen_on
+          message: command_broadcast_intent
+          data:
+            intent_package_name: dk.yepzdk.hapanel
+            intent_action: dk.yepzdk.hapanel.SCREEN_ON
 ```
 
 ## Screen off while alarm is armed (DPC broadcast)
 
-The Companion app has no screen-off command; the DPC provides one.
+The Companion app has no screen-off command; the DPC provides one. It covers
+the dashboard with a black overlay and keeps the device awake: real sleep also
+stops the Companion app's connection, and HA could not wake the panel again.
 
 ```yaml
 automation:
@@ -45,7 +50,10 @@ automation:
             intent_action: dk.yepzdk.hapanel.SCREEN_OFF
 ```
 
-Waking is any `command_screen_on` (e.g. on disarm, or on presence as above).
+Wake with `SCREEN_ON` (e.g. on disarm, or on presence as above), or by tapping
+the panel. The Companion app's `command_screen_on` does not remove the overlay.
+HA cannot see whether the overlay is up — the Interactive sensor stays on — so
+track it in a helper if an automation needs to know.
 
 ## Dim in a dark environment (DPC broadcast)
 
@@ -79,8 +87,12 @@ automation:
           data:
             intent_package_name: dk.yepzdk.hapanel
             intent_action: dk.yepzdk.hapanel.SET_BRIGHTNESS
-            intent_extras: "brightness:255"
+            intent_extras: "brightness:auto"
 ```
+
+`brightness:auto` hands control back to the panel's own light sensor; any
+number switches automatic brightness off. A brightness set while the screen is
+off takes effect when it wakes.
 
 Alternative without the DPC: `command_screen_brightness_level` (value 0–255)
 does the same natively, but requires granting the Companion app "Modify system
@@ -104,6 +116,25 @@ automation:
 ```
 
 The trampoline re-pins the dashboard automatically after the update installs.
+
+## Update the DPC on the panel
+
+`UPDATE_PANEL` installs the DPC's latest GitHub release; the panel shows the
+new version briefly and returns to the dashboard. Run it after publishing a
+release rather than on a schedule:
+
+```yaml
+script:
+  update_entrance_panel_dpc:
+    alias: "Update entrance panel DPC"
+    sequence:
+      - action: notify.mobile_app_entrance_panel
+        data:
+          message: command_broadcast_intent
+          data:
+            intent_package_name: dk.yepzdk.hapanel
+            intent_action: dk.yepzdk.hapanel.UPDATE_PANEL
+```
 
 ## Factory reset a panel for re-provisioning
 

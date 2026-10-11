@@ -65,14 +65,17 @@ contains your Wi-Fi password.
 2. On the "Hi there" welcome screen, tap the same spot **6 times** — a QR
    scanner opens.
 3. Scan `qr.png`. The device joins Wi-Fi, installs the DPC as device owner,
-   the DPC installs the HA app and pins it.
-4. Log in with your dedicated dashboard user, pick the default dashboard.
-5. In Settings → Companion app, enable **Fullscreen** — this hides the
+   and the DPC installs the HA app in the background.
+4. Finish the remaining setup wizard screens. The DPC pins the HA app only
+   once setup is complete — a wizard left unfinished boots back to the
+   welcome screen on the next restart.
+5. Log in with your dedicated dashboard user, pick the default dashboard.
+6. In Settings → Companion app, enable **Fullscreen** — this hides the
    navigation bar (the back arrow is already inert in lock task mode, but
    fullscreen removes it entirely). Do this NOW, while the sidebar is
    reachable: if your dashboard hides the sidebar (e.g. kiosk-mode plugin),
    this screen has no other practical way in on a locked panel.
-6. In the Companion app sensor settings, enable any sensors you want
+7. In the Companion app sensor settings, enable any sensors you want
    (illuminance for auto-dimming, battery, etc.).
 
 ### Fallback: provisioning over USB
@@ -85,6 +88,80 @@ adb shell dpm set-device-owner dk.yepzdk.hapanel/.AdminReceiver
 ```
 
 Works only on a freshly reset device with no accounts added.
+
+## Testing panel commands
+
+Run each action from **Developer tools → Actions** (YAML mode). Replace
+`notify.mobile_app_kitchen_panel` with the panel's service: find the device
+under Settings → Devices & services → Mobile App. Every provisioning registers
+a new device, so delete stale entries and use the newest — a command sent to a
+stale entry silently goes nowhere. For automations, see
+[docs/automations.md](docs/automations.md).
+
+1. **Delivery check** — opens the profile page. Send `command_webview` without
+   `command` to return to the default dashboard. If nothing happens, the panel
+   is not receiving commands from HA at all, so the steps below cannot work.
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_webview
+     data:
+       command: /profile
+   ```
+
+2. **Screen off**, then **screen on** (Companion app command):
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_broadcast_intent
+     data:
+       intent_package_name: dk.yepzdk.hapanel
+       intent_action: dk.yepzdk.hapanel.SCREEN_OFF
+   ```
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_screen_on
+   ```
+
+3. **Brightness** 0–255; set it back to `255` afterwards:
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_broadcast_intent
+     data:
+       intent_package_name: dk.yepzdk.hapanel
+       intent_action: dk.yepzdk.hapanel.SET_BRIGHTNESS
+       intent_extras: "brightness:30"
+   ```
+
+4. **Update the HA app** — re-downloads and reinstalls it. The dashboard
+   disappears while it reinstalls, then HA comes back pinned:
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_broadcast_intent
+     data:
+       intent_package_name: dk.yepzdk.hapanel
+       intent_action: dk.yepzdk.hapanel.UPDATE_HA
+   ```
+
+5. **Factory reset** — wipes the panel back to the welcome screen. Run last:
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_broadcast_intent
+     data:
+       intent_package_name: dk.yepzdk.hapanel
+       intent_action: dk.yepzdk.hapanel.FACTORY_RESET
+       intent_extras: "confirm:wipe"
+   ```
 
 ## Troubleshooting provisioning
 
@@ -107,6 +184,9 @@ Works only on a freshly reset device with no accounts added.
   fallback above.
 - **Provisioning "not supported"** — check the device declares device admin:
   `adb shell pm list features | grep device_admin`.
+- **Panel boots to the welcome screen after a restart** — the setup wizard
+  was never completed. Earlier DPC builds pinned HA on top of the wizard
+  mid-setup; re-provision with a current build and finish the wizard.
 - **"This device belongs to your organization" screens** — expected on
   Android 12+, not an error.
 
@@ -116,10 +196,10 @@ Works only on a freshly reset device with no accounts added.
 | --- | --- |
 | `AdminReceiver` | Device-owner identity; legacy (Android 9–11) provisioning hook |
 | `GetProvisioningModeActivity` / `PolicyComplianceActivity` | Android 12+ QR provisioning flow |
-| `KioskSetup` | Applies all policies: lock task allowlist, persistent HOME, keyguard/status bar off, stay-on-while-plugged |
+| `KioskSetup` | Applies all policies: lock task allowlist, persistent HOME, keyguard/status bar off, stay-on-while-plugged, no screen dimming |
 | `InstallService` | Downloads + silently installs the HA Companion APK |
 | `HomeActivity` | Persistent HOME trampoline — anything that lands on "home" re-pins the HA app |
-| `PanelCommandReceiver` | HA-driven commands: `SCREEN_OFF`, `SET_BRIGHTNESS`, `UPDATE_HA` |
+| `PanelCommandReceiver` | HA-driven commands: `SCREEN_OFF`, `SET_BRIGHTNESS`, `UPDATE_HA`, `FACTORY_RESET` |
 | `provisioning/make-qr.sh` | Renders the provisioning QR from your local config |
 
 Development builds: `export JAVA_HOME=$(/usr/libexec/java_home -v 17+)` (or a

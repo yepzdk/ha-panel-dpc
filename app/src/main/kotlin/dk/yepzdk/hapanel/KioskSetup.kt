@@ -23,6 +23,10 @@ object KioskSetup {
     /** Admin-extras key for the HA APK download URL (optional QR override). */
     const val EXTRA_HA_APK_URL = "ha_apk_url"
 
+    // Settings.Secure.USER_SETUP_COMPLETE is a hidden SystemApi constant, but
+    // the key is annotated @Readable, so apps may read it by name.
+    private const val USER_SETUP_COMPLETE = "user_setup_complete"
+
     fun run(context: Context, adminExtras: PersistableBundle?) {
         persistExtras(context, adminExtras)
 
@@ -57,6 +61,11 @@ object KioskSetup {
             BatteryManager.BATTERY_PLUGGED_WIRELESS
         dpm.setGlobalSetting(admin, Settings.Global.STAY_ON_WHILE_PLUGGED_IN, plugged.toString())
 
+        // Stay-on keeps the device awake, but PowerManager still dims the
+        // screen once the screen-off timeout passes. Max it out so the panel
+        // stays bright; HA turns the screen off explicitly (SCREEN_OFF).
+        dpm.setSystemSetting(admin, Settings.System.SCREEN_OFF_TIMEOUT, Int.MAX_VALUE.toString())
+
         Log.i(TAG, "Kiosk policies applied")
 
         InstallService.start(context)
@@ -76,6 +85,14 @@ object KioskSetup {
             )
         }
     }
+
+    /**
+     * True once the setup wizard has finished. During QR provisioning our code
+     * runs mid-wizard; pinning HA then covers the wizard, setup never completes,
+     * and the device boots back to the welcome screen.
+     */
+    fun isSetupComplete(context: Context): Boolean =
+        Settings.Secure.getInt(context.contentResolver, USER_SETUP_COMPLETE, 0) == 1
 
     fun haApkUrl(context: Context): String? =
         context.getSharedPreferences("config", Context.MODE_PRIVATE)

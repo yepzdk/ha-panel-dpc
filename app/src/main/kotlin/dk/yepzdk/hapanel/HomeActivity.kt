@@ -12,29 +12,29 @@ import android.widget.TextView
 
 /**
  * Persistent HOME trampoline: every landing on "home" (boot, HA app update,
- * crash) relaunches the HA app pinned in lock task. If the app is missing,
- * kicks the installer and retries until it appears.
+ * crash) relaunches the HA app pinned in lock task. Waits while the setup
+ * wizard is unfinished; if the app is missing, kicks the installer. Retries
+ * until both conditions clear.
  */
 class HomeActivity : Activity() {
 
+    private lateinit var status: TextView
     private val handler = Handler(Looper.getMainLooper())
     private val retry = object : Runnable {
         override fun run() {
-            if (!launchHa()) handler.postDelayed(this, RETRY_MS)
+            if (!launchIfReady()) handler.postDelayed(this, RETRY_MS)
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(
-            TextView(this).apply {
-                text = "Installing Home Assistant…"
-                gravity = Gravity.CENTER
-                setTextColor(Color.WHITE)
-                setBackgroundColor(Color.BLACK)
-                textSize = 20f
-            },
-        )
+        status = TextView(this).apply {
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            setBackgroundColor(Color.BLACK)
+            textSize = 20f
+        }
+        setContentView(status)
     }
 
     override fun onResume() {
@@ -47,10 +47,11 @@ class HomeActivity : Activity() {
         ) {
             KioskSetup.run(this, null)
         }
-        if (!launchHa()) {
+        if (launchIfReady()) return
+        if (packageManager.getLaunchIntentForPackage(KioskSetup.HA_PACKAGE) == null) {
             InstallService.start(this)
-            handler.postDelayed(retry, RETRY_MS)
         }
+        handler.postDelayed(retry, RETRY_MS)
     }
 
     override fun onPause() {
@@ -58,10 +59,17 @@ class HomeActivity : Activity() {
         handler.removeCallbacks(retry)
     }
 
-    /** @return true if the HA app was found and launched. */
-    private fun launchHa(): Boolean {
+    /** @return true if setup is complete and the HA app was found and launched. */
+    private fun launchIfReady(): Boolean {
+        if (!KioskSetup.isSetupComplete(this)) {
+            status.text = "Waiting for device setup to finish…"
+            return false
+        }
         val launch = packageManager.getLaunchIntentForPackage(KioskSetup.HA_PACKAGE)
-            ?: return false
+        if (launch == null) {
+            status.text = "Installing Home Assistant…"
+            return false
+        }
         val options = ActivityOptions.makeBasic().apply { setLockTaskEnabled(true) }
         try {
             startActivity(launch, options.toBundle())

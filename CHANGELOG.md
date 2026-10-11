@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-11
+
 ### Added
 
 - `UPDATE_PANEL` updates the DPC over the air from its latest release, or from a given URL to try a build first, so a panel no longer has to be re-provisioned for each new version.
@@ -50,7 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Provisioning tooling: QR payload template and `make-qr.sh`, plus signing config.
 - Docs: README provisioning walkthrough and ready-to-paste HA automations.
 
-[Unreleased]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/yepzdk/ha-panel-dpc/releases/tag/v0.1.0

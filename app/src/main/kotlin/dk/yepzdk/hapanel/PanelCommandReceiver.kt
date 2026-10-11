@@ -31,7 +31,7 @@ class PanelCommandReceiver : BroadcastReceiver() {
         when (intent.action) {
             ACTION_SCREEN_OFF -> ScreenOffActivity.show(context)
 
-            ACTION_SCREEN_ON -> ScreenOffActivity.dismiss()
+            ACTION_SCREEN_ON -> ScreenOffActivity.dismiss(context)
 
             ACTION_SET_BRIGHTNESS -> {
                 // HA's intent_extras may arrive typed as string or int — accept both.

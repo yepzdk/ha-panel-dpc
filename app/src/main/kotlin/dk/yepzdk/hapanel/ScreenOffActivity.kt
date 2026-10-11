@@ -1,6 +1,7 @@
 package dk.yepzdk.hapanel
 
 import android.app.Activity
+import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -17,13 +18,23 @@ import android.view.WindowManager
  * sleep (lockNow) also stops the Companion app's connection to HA, so HA
  * could not wake the panel again.
  *
- * Dismissed by SCREEN_ON, a tap, or back. The system brightness setting is
- * untouched, so SET_BRIGHTNESS while blanked applies once the panel wakes.
+ * Dismissed by SCREEN_ON, a tap, or back — always by the activity finishing
+ * itself, which is the path a tap proved to work. SCREEN_ON reaches it as a
+ * new intent: finishing it through a static reference to the instance left
+ * the overlay up on a panel.
+ *
+ * The system brightness setting is untouched, so SET_BRIGHTNESS while blanked
+ * applies once the panel wakes.
  */
 class ScreenOffActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // SCREEN_ON raced the overlay's own teardown: nothing to show.
+        if (intent?.action == ACTION_DISMISS) {
+            finish()
+            return
+        }
         window.attributes = window.attributes.apply {
             screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_OFF
         }
@@ -34,12 +45,11 @@ class ScreenOffActivity : Activity() {
             },
         )
         hideSystemBars()
-        current = this
     }
 
-    override fun onDestroy() {
-        if (current === this) current = null
-        super.onDestroy()
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.action == ACTION_DISMISS) finish()
     }
 
     @Suppress("DEPRECATION")
@@ -57,17 +67,25 @@ class ScreenOffActivity : Activity() {
     }
 
     companion object {
-        // Set only while the overlay is showing; receivers run on the main thread.
-        private var current: ScreenOffActivity? = null
+        private const val ACTION_DISMISS = "dk.yepzdk.hapanel.action.DISMISS_SCREEN_OFF"
 
         fun show(context: Context) {
-            context.startActivity(
-                Intent(context, ScreenOffActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-            )
+            context.startActivity(intent(context))
         }
 
-        fun dismiss() {
-            current?.finish()
+        /** Finish the overlay if it is up; no-op otherwise. */
+        fun dismiss(context: Context) {
+            if (isShowing(context)) context.startActivity(intent(context).setAction(ACTION_DISMISS))
         }
+
+        private fun intent(context: Context) =
+            Intent(context, ScreenOffActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+        private fun isShowing(context: Context): Boolean =
+            context.getSystemService(ActivityManager::class.java).appTasks.any { task ->
+                // A task can vanish between listing and reading it.
+                runCatching { task.taskInfo.baseActivity?.className }.getOrNull() ==
+                    ScreenOffActivity::class.java.name
+            }
     }
 }

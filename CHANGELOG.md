@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-11
+
+### Fixed
+
+- `SCREEN_ON` did not remove the screen-off overlay; the panel stayed black until tapped.
+
 ## [0.4.0] - 2026-10-11
 
 ### Added
@@ -52,7 +58,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Provisioning tooling: QR payload template and `make-qr.sh`, plus signing config.
 - Docs: README provisioning walkthrough and ready-to-paste HA automations.
 
-[Unreleased]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.1.0...v0.2.0

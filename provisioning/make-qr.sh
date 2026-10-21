@@ -25,9 +25,13 @@ CHECKSUM=$(keytool -storepass "$KEYSTORE_PW" -exportcert -keystore "$KEYSTORE" -
 # so SSIDs and passwords may contain any characters.
 export WIFI_SSID WIFI_PASSWORD DPC_APK_URL HA_APK_URL CHECKSUM
 export WIFI_SECURITY="${WIFI_SECURITY:-WPA}"
+export HA_URL="${HA_URL:-}"
 python3 > payload.json <<'EOF'
 import json, os
 e = os.environ
+admin_extras = {"ha_apk_url": e["HA_APK_URL"]}
+if e["HA_URL"]:
+    admin_extras["ha_url"] = e["HA_URL"]
 print(json.dumps({
     "android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME": "dk.yepzdk.hapanel/.AdminReceiver",
     "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION": e["DPC_APK_URL"],
@@ -36,7 +40,7 @@ print(json.dumps({
     "android.app.extra.PROVISIONING_WIFI_PASSWORD": e["WIFI_PASSWORD"],
     "android.app.extra.PROVISIONING_WIFI_SECURITY_TYPE": e["WIFI_SECURITY"],
     "android.app.extra.PROVISIONING_LEAVE_ALL_SYSTEM_APPS_ENABLED": False,
-    "android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE": {"ha_apk_url": e["HA_APK_URL"]},
+    "android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE": admin_extras,
 }, indent=2))
 EOF
 

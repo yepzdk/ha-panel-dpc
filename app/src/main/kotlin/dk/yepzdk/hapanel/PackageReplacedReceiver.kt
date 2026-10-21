@@ -9,7 +9,8 @@ import android.widget.Toast
 /**
  * Runs in the new version right after this app was updated (UPDATE_PANEL).
  * Re-applies the policies the new version may have changed, re-pins the
- * dashboard, and shows the version — HA has no sensor for it.
+ * dashboard, shows the version on the panel, and reports it to the Smart
+ * Panel integration when linked.
  */
 class PackageReplacedReceiver : BroadcastReceiver() {
 
@@ -25,6 +26,12 @@ class PackageReplacedReceiver : BroadcastReceiver() {
             context.startActivity(
                 Intent(context, HomeActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             )
+        }
+
+        if (StatusReporter.isActive(context)) {
+            // Re-arm in case the update changed the job's definition.
+            StatusJobService.scheduleHeartbeat(context)
+            StatusReporter.sendFromReceiver(this, context, StatusReporter.EVENT_UPDATED)
         }
     }
 }

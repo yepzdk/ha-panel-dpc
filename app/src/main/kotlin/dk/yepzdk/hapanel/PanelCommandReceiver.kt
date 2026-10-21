@@ -29,6 +29,17 @@ import android.widget.Toast
  * UPDATE_PANEL      — update this app; optional extra "url" (default: latest release)
  * FACTORY_RESET     — wipe the device for re-provisioning; requires extra
  *                     confirm="wipe" so a stray broadcast can't nuke a panel
+ * LINK              — link to the Smart Panel integration: extras "ref"
+ *                     ([A-Za-z0-9_-]{1,64}) and "url" (http(s) status webhook);
+ *                     reports the state there from now on
+ * UNLINK            — forget the link and stop reporting
+ * REPORT            — report the state now
+ *
+ * While linked, every state change (screen, brightness, maintenance) is
+ * reported to the integration (StatusReporter).
+ *
+ * The Companion app types an extra by its value ("128" arrives as an int)
+ * unless it carries a ":String" suffix, so extras are read type-agnostically.
  */
 class PanelCommandReceiver : BroadcastReceiver() {
 
@@ -40,14 +51,14 @@ class PanelCommandReceiver : BroadcastReceiver() {
         when (intent.action) {
             ACTION_SCREEN_OFF -> ScreenOffActivity.show(context)
 
-            ACTION_SCREEN_ON -> ScreenOffActivity.dismiss(context)
+            // The overlay reports its own dismissal; without one up, the state already holds.
+            ACTION_SCREEN_ON -> if (!ScreenOffActivity.dismiss(context)) reportChange(context)
 
             ACTION_SET_BRIGHTNESS -> {
-                // HA's intent_extras may arrive typed as string or int — accept both.
-                @Suppress("DEPRECATION")
-                val raw = intent.extras?.get("brightness")?.toString()
+                val raw = extra(intent, "brightness")
                 if (raw == "auto") {
                     dpm.setSystemSetting(admin, Settings.System.SCREEN_BRIGHTNESS_MODE, "1")
+                    reportChange(context)
                     return
                 }
                 val value = raw?.toIntOrNull()?.takeIf { it in 0..255 }
@@ -58,9 +69,10 @@ class PanelCommandReceiver : BroadcastReceiver() {
                 // Manual mode first, or automatic brightness overrides the value.
                 dpm.setSystemSetting(admin, Settings.System.SCREEN_BRIGHTNESS_MODE, "0")
                 dpm.setSystemSetting(admin, Settings.System.SCREEN_BRIGHTNESS, value.toString())
+                reportChange(context)
             }
 
-            ACTION_NAVIGATE -> navigate(context, intent.getStringExtra("path").orEmpty())
+            ACTION_NAVIGATE -> navigate(context, extra(intent, "path").orEmpty())
 
             ACTION_REBOOT -> {
                 Log.i(KioskSetup.TAG, "Reboot requested")
@@ -76,6 +88,7 @@ class PanelCommandReceiver : BroadcastReceiver() {
             ACTION_MAINTENANCE_ON -> {
                 if (KioskSetup.startMaintenance(context)) {
                     Toast.makeText(context, "Maintenance mode on", Toast.LENGTH_LONG).show()
+                    reportChange(context)
                 }
             }
 
@@ -86,15 +99,16 @@ class PanelCommandReceiver : BroadcastReceiver() {
                     context.startActivity(
                         Intent(context, HomeActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                     )
+                    reportChange(context)
                 }
             }
 
             ACTION_UPDATE_HA -> InstallService.startHa(context)
 
-            ACTION_UPDATE_PANEL -> InstallService.startSelf(context, intent.getStringExtra("url"))
+            ACTION_UPDATE_PANEL -> InstallService.startSelf(context, extra(intent, "url"))
 
             ACTION_FACTORY_RESET -> {
-                if (intent.extras?.get("confirm")?.toString() == "wipe") {
+                if (extra(intent, "confirm") == "wipe") {
                     Log.i(KioskSetup.TAG, "Factory reset requested — wiping")
                     @Suppress("DEPRECATION")
                     dpm.wipeData(0)
@@ -102,8 +116,47 @@ class PanelCommandReceiver : BroadcastReceiver() {
                     Log.w(KioskSetup.TAG, "FACTORY_RESET without confirm=wipe ignored")
                 }
             }
+
+            ACTION_LINK -> link(context, intent)
+
+            ACTION_UNLINK -> {
+                KioskSetup.unlink(context)
+                StatusJobService.cancelAll(context)
+                Log.i(KioskSetup.TAG, "Unlinked from the Smart Panel integration")
+            }
+
+            ACTION_REPORT -> StatusReporter.sendFromReceiver(this, context, StatusReporter.EVENT_REPORT)
         }
     }
+
+    /** Persist the integration link, start the heartbeat, and report right away. */
+    private fun link(context: Context, intent: Intent) {
+        val ref = extra(intent, "ref")
+        val url = extra(intent, "url")
+        if (ref == null || !REF_PATTERN.matches(ref)) {
+            Log.w(KioskSetup.TAG, "LINK with invalid ref ignored: $ref")
+            return
+        }
+        val uri = url?.let(Uri::parse)
+        if (url == null || uri == null || uri.scheme?.lowercase() !in setOf("http", "https") ||
+            uri.host.isNullOrEmpty()
+        ) {
+            // Not logged: the URL carries the webhook id, which is its only secret.
+            Log.w(KioskSetup.TAG, "LINK without a valid http(s) url ignored")
+            return
+        }
+        KioskSetup.link(context, ref, url)
+        StatusJobService.scheduleHeartbeat(context)
+        Log.i(KioskSetup.TAG, "Linked to the Smart Panel integration as $ref")
+        StatusReporter.sendFromReceiver(this, context, StatusReporter.EVENT_LINK)
+    }
+
+    private fun reportChange(context: Context) =
+        StatusReporter.sendFromReceiver(this, context, StatusReporter.EVENT_CHANGE)
+
+    /** An extra as text, whichever type the Companion app gave it. */
+    @Suppress("DEPRECATION")
+    private fun extra(intent: Intent, name: String): String? = intent.extras?.get(name)?.toString()
 
     /**
      * Open HA's `homeassistant://navigate` deep link. [path] is a frontend path
@@ -132,5 +185,10 @@ class PanelCommandReceiver : BroadcastReceiver() {
         const val ACTION_UPDATE_HA = "dk.yepzdk.hapanel.UPDATE_HA"
         const val ACTION_UPDATE_PANEL = "dk.yepzdk.hapanel.UPDATE_PANEL"
         const val ACTION_FACTORY_RESET = "dk.yepzdk.hapanel.FACTORY_RESET"
+        const val ACTION_LINK = "dk.yepzdk.hapanel.LINK"
+        const val ACTION_UNLINK = "dk.yepzdk.hapanel.UNLINK"
+        const val ACTION_REPORT = "dk.yepzdk.hapanel.REPORT"
+
+        private val REF_PATTERN = Regex("^[A-Za-z0-9_-]{1,64}$")
     }
 }

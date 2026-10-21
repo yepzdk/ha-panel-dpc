@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Panels report their state (versions, screen, brightness, maintenance mode) to the Smart Panel integration once it links them, on every change and every 15 minutes.
+- An optional `HA_URL` in the provisioning QR opens the Home Assistant app's login at that server on first start, so only the username and password need typing.
+
+### Changed
+
+- Plain `http://` connections are allowed, so panels can report to a Home Assistant on the local network without HTTPS. This also allows `http://` download URLs.
+
 ## [0.5.0] - 2026-10-21
 
 ### Added

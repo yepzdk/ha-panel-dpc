@@ -23,6 +23,19 @@ object KioskSetup {
     /** Admin-extras key for the HA APK download URL (optional QR override). */
     const val EXTRA_HA_APK_URL = "ha_apk_url"
 
+    /** Admin-extras key for the HA server URL the HA app's onboarding starts with (optional). */
+    const val EXTRA_HA_URL = "ha_url"
+
+    /**
+     * Set once the HA invite link was opened. Never cleared: every QR
+     * provisioning starts from a factory reset, which wipes it.
+     */
+    private const val INVITE_OPENED = "invite_opened"
+
+    /** Smart Panel integration link, set by LINK; both absent when unlinked. */
+    private const val LINK_REF = "link_ref"
+    private const val LINK_STATUS_URL = "link_status_url"
+
     // Settings.Secure.USER_SETUP_COMPLETE is a hidden SystemApi constant, but
     // the key is annotated @Readable, so apps may read it by name.
     private const val USER_SETUP_COMPLETE = "user_setup_complete"
@@ -105,6 +118,30 @@ object KioskSetup {
         Settings.Secure.getInt(context.contentResolver, USER_SETUP_COMPLETE, 0) == 1
 
     fun haApkUrl(context: Context): String? = prefs(context).getString(EXTRA_HA_APK_URL, null)
+
+    fun haUrl(context: Context): String? = prefs(context).getString(EXTRA_HA_URL, null)
+
+    fun isInviteOpened(context: Context): Boolean = prefs(context).getBoolean(INVITE_OPENED, false)
+
+    fun markInviteOpened(context: Context) {
+        // Synchronous: the next HOME landing must not open the invite again.
+        prefs(context).edit().putBoolean(INVITE_OPENED, true).commit()
+    }
+
+    /** Integration ref from LINK, or null when unlinked. */
+    fun linkRef(context: Context): String? = prefs(context).getString(LINK_REF, null)
+
+    /** Status webhook URL from LINK, or null when unlinked. */
+    fun statusUrl(context: Context): String? = prefs(context).getString(LINK_STATUS_URL, null)
+
+    fun link(context: Context, ref: String, statusUrl: String) {
+        // Synchronous: the status report that follows reads these.
+        prefs(context).edit().putString(LINK_REF, ref).putString(LINK_STATUS_URL, statusUrl).commit()
+    }
+
+    fun unlink(context: Context) {
+        prefs(context).edit().remove(LINK_REF).remove(LINK_STATUS_URL).commit()
+    }
 
     /**
      * Maintenance mode: HA runs unpinned and the status bar works, so Android

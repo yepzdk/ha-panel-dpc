@@ -19,8 +19,8 @@ android {
         minSdk = 28
         targetSdk = 36
         // 5 and 8 went to the 0.4.1-rc.1 and 0.5.0-rc.1 OTA test builds.
-        versionCode = 9
-        versionName = "0.5.0"
+        versionCode = 10
+        versionName = "0.6.0-rc.1"
     }
 
     signingConfigs {

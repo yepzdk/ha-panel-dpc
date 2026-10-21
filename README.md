@@ -62,6 +62,10 @@ cp local.env.example local.env   # fill in Wi-Fi credentials + your APK URL
 ./make-qr.sh                     # writes qr.png
 ```
 
+Set the optional `HA_URL` to your HA server (e.g. `http://homeassistant.local:8123`)
+and the HA app opens its onboarding with that server filled in on the panel's
+first launch, so only the login is left.
+
 `local.env`, the generated payload, and the QR are gitignored — the payload
 contains your Wi-Fi password.
 
@@ -253,7 +257,50 @@ next sensor update, so allow a few seconds.
    higher `versionCode`. Android refuses anything else, and the panel keeps
    running the version it has.
 
-9. **Factory reset** — wipes the panel back to the welcome screen. Run last:
+9. **Link to a status webhook** — the panel then POSTs its state as JSON
+   (versions, maintenance, screen off, brightness, device model) to `url`:
+   right away, after every screen, brightness or maintenance change, after a
+   restart or an update of either app, and every 15 minutes. The Smart Panel
+   integration sends this itself; to watch the reports by hand, point `url` at
+   an automation with a webhook trigger. `ref` (letters, digits, `_`, `-`, up
+   to 64) is echoed in every report. Keep the `:String` suffixes: the URL
+   contains `:`, and a `ref` of only digits would otherwise arrive as a number:
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_broadcast_intent
+     data:
+       intent_package_name: dk.yepzdk.hapanel
+       intent_action: dk.yepzdk.hapanel.LINK
+       intent_extras: "ref:kitchen:String,url:http://homeassistant.local:8123/api/webhook/<webhook_id>:String"
+   ```
+
+   An invalid `ref` or a URL that is not `http(s)` is ignored. Without a
+   working network the report is skipped; the next one carries fresh state.
+
+10. **Report now**, then **unlink** — `REPORT` sends the state immediately;
+    `UNLINK` forgets the URL and stops all reports:
+
+    ```yaml
+    action: notify.mobile_app_kitchen_panel
+    data:
+      message: command_broadcast_intent
+      data:
+        intent_package_name: dk.yepzdk.hapanel
+        intent_action: dk.yepzdk.hapanel.REPORT
+    ```
+
+    ```yaml
+    action: notify.mobile_app_kitchen_panel
+    data:
+      message: command_broadcast_intent
+      data:
+        intent_package_name: dk.yepzdk.hapanel
+        intent_action: dk.yepzdk.hapanel.UNLINK
+    ```
+
+11. **Factory reset** — wipes the panel back to the welcome screen. Run last:
 
    ```yaml
    action: notify.mobile_app_kitchen_panel
@@ -300,10 +347,12 @@ next sensor update, so allow a few seconds.
 | `GetProvisioningModeActivity` / `PolicyComplianceActivity` | Android 12+ QR provisioning flow |
 | `KioskSetup` | Applies all policies: lock task allowlist, persistent HOME, keyguard/status bar off, stay-on-while-plugged, no screen dimming |
 | `InstallService` | Downloads + silently installs the HA Companion APK, or a new version of the DPC itself |
-| `HomeActivity` | Persistent HOME trampoline — anything that lands on "home" re-pins the HA app (unpinned in maintenance mode) |
+| `HomeActivity` | Persistent HOME trampoline — anything that lands on "home" re-pins the HA app (unpinned in maintenance mode); the first launch after provisioning opens the HA app's onboarding at the QR's `ha_url` admin extra, when set |
 | `ScreenOffActivity` | Black overlay for `SCREEN_OFF`; the device stays awake so HA can wake it again |
 | `PackageReplacedReceiver` | After a DPC update: re-applies policies and re-pins the dashboard |
-| `PanelCommandReceiver` | HA-driven commands: `SCREEN_OFF`, `SCREEN_ON`, `SET_BRIGHTNESS`, `NAVIGATE`, `REBOOT`, `MAINTENANCE_ON`, `MAINTENANCE_OFF`, `UPDATE_HA`, `UPDATE_PANEL`, `FACTORY_RESET` |
+| `PanelCommandReceiver` | HA-driven commands: `SCREEN_OFF`, `SCREEN_ON`, `SET_BRIGHTNESS`, `NAVIGATE`, `REBOOT`, `MAINTENANCE_ON`, `MAINTENANCE_OFF`, `UPDATE_HA`, `UPDATE_PANEL`, `FACTORY_RESET`, `LINK`, `UNLINK`, `REPORT` |
+| `StatusReporter` | While linked (`LINK`): POSTs the panel's state as JSON to the status webhook |
+| `StatusJobService` / `BootReceiver` | 15-minute heartbeat report, and the report after a restart once the network is up |
 | `provisioning/make-qr.sh` | Renders the provisioning QR from your local config |
 
 Development builds: `export JAVA_HOME=$(/usr/libexec/java_home -v 17+)` (or a

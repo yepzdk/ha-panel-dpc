@@ -30,6 +30,13 @@ automation:
 
 ## Screen off while alarm is armed (DPC broadcast)
 
+> **Avoid for now.** After a screen off, the Home Assistant app on the panel
+> can confirm the next command too late. Home Assistant then drops the panel's
+> connection without telling the app, and no command reaches the panel until
+> it restarts; a tap may not wake it either. Tracked in
+> [home-assistant/core#176371](https://github.com/home-assistant/core/issues/176371).
+> Dim with `SET_BRIGHTNESS` instead.
+
 The Companion app has no screen-off command; the DPC provides one. It covers
 the dashboard with a black overlay and keeps the device awake: real sleep also
 stops the Companion app's connection, and HA could not wake the panel again.

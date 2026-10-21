@@ -154,6 +154,11 @@ next sensor update, so allow a few seconds.
    backlight at its minimum; the device stays awake, so HA can still wake it.
    A tap on the panel wakes it too.
 
+   **Avoid for now:** after a screen off, a panel can stay unreachable until
+   it restarts, and a tap may not wake it. See
+   [home-assistant/core#176371](https://github.com/home-assistant/core/issues/176371);
+   dim with `SET_BRIGHTNESS` instead.
+
    ```yaml
    action: notify.mobile_app_kitchen_panel
    data:

@@ -10,8 +10,9 @@ no Google Play needed) and pins it fullscreen in lock task mode:
 
 - No status bar, no navigation escape, survives reboots and app updates
 - No Google account, no Play Store, no per-device fiddling
-- Screen on/off, brightness, and updates of both the HA app and the DPC itself
-  driven by HA automations (see [docs/automations.md](docs/automations.md))
+- Screen on/off, brightness, navigation, restarts, maintenance access, and
+  updates of both the HA app and the DPC itself driven by HA automations
+  (see [docs/automations.md](docs/automations.md))
 
 ## One-time setup
 
@@ -77,9 +78,10 @@ contains your Wi-Fi password.
 5. Log in with your dedicated dashboard user, pick the default dashboard.
 6. In Settings → Companion app, enable **Fullscreen** — this hides the
    navigation bar (the back arrow is already inert in lock task mode, but
-   fullscreen removes it entirely). Do this NOW, while the sidebar is
-   reachable: if your dashboard hides the sidebar (e.g. kiosk-mode plugin),
-   this screen has no other practical way in on a locked panel.
+   fullscreen removes it entirely). Do this while the sidebar is reachable:
+   if your dashboard hides it with the kiosk-mode plugin, the way back is
+   `NAVIGATE` to the dashboard with `?disable_km` (see
+   [Testing panel commands](#testing-panel-commands)).
 7. In the Companion app sensor settings, enable any sensors you want
    (illuminance for auto-dimming, battery, etc.).
 
@@ -161,7 +163,58 @@ next sensor update, so allow a few seconds.
 
    The Companion app's own `command_screen_on` does not remove the overlay.
 
-4. **Update the HA app** — re-downloads and reinstalls it. The dashboard
+4. **Open a page** — opens HA at `path` and loads it fresh, so it also works
+   as a reload after a dashboard change. Without `path` it opens the default
+   dashboard. `/profile` reaches **Log out** when the dashboard hides the
+   sidebar, and `?disable_km` skips the kiosk-mode plugin for one load:
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_broadcast_intent
+     data:
+       intent_package_name: dk.yepzdk.hapanel
+       intent_action: dk.yepzdk.hapanel.NAVIGATE
+       intent_extras: "path:/profile"
+   ```
+
+5. **Maintenance mode** — unpins HA and enables the status bar, so Android
+   settings are reachable from quick settings (e.g. Apps → Home Assistant →
+   Storage → Clear data to log the app out). HA reopens on its own; the home
+   button returns to it. `MAINTENANCE_OFF` pins it again, and so does a
+   restart, so a panel cannot be left unlocked by mistake:
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_broadcast_intent
+     data:
+       intent_package_name: dk.yepzdk.hapanel
+       intent_action: dk.yepzdk.hapanel.MAINTENANCE_ON
+   ```
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_broadcast_intent
+     data:
+       intent_package_name: dk.yepzdk.hapanel
+       intent_action: dk.yepzdk.hapanel.MAINTENANCE_OFF
+   ```
+
+6. **Restart** the device. Android refuses during a phone call, and the
+   panel shows why:
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_broadcast_intent
+     data:
+       intent_package_name: dk.yepzdk.hapanel
+       intent_action: dk.yepzdk.hapanel.REBOOT
+   ```
+
+7. **Update the HA app** — re-downloads and reinstalls it. The dashboard
    disappears while it reinstalls, then HA comes back pinned:
 
    ```yaml
@@ -173,7 +226,7 @@ next sensor update, so allow a few seconds.
        intent_action: dk.yepzdk.hapanel.UPDATE_HA
    ```
 
-5. **Update the DPC** — installs the latest release. The panel shows
+8. **Update the DPC** — installs the latest release. The panel shows
    "Updating panel…", then "Panel updated to x.y.z", and returns to the
    dashboard. A failed download or install shows "Panel update failed" with
    the reason:
@@ -200,7 +253,7 @@ next sensor update, so allow a few seconds.
    higher `versionCode`. Android refuses anything else, and the panel keeps
    running the version it has.
 
-6. **Factory reset** — wipes the panel back to the welcome screen. Run last:
+9. **Factory reset** — wipes the panel back to the welcome screen. Run last:
 
    ```yaml
    action: notify.mobile_app_kitchen_panel
@@ -247,10 +300,10 @@ next sensor update, so allow a few seconds.
 | `GetProvisioningModeActivity` / `PolicyComplianceActivity` | Android 12+ QR provisioning flow |
 | `KioskSetup` | Applies all policies: lock task allowlist, persistent HOME, keyguard/status bar off, stay-on-while-plugged, no screen dimming |
 | `InstallService` | Downloads + silently installs the HA Companion APK, or a new version of the DPC itself |
-| `HomeActivity` | Persistent HOME trampoline — anything that lands on "home" re-pins the HA app |
+| `HomeActivity` | Persistent HOME trampoline — anything that lands on "home" re-pins the HA app (unpinned in maintenance mode) |
 | `ScreenOffActivity` | Black overlay for `SCREEN_OFF`; the device stays awake so HA can wake it again |
 | `PackageReplacedReceiver` | After a DPC update: re-applies policies and re-pins the dashboard |
-| `PanelCommandReceiver` | HA-driven commands: `SCREEN_OFF`, `SCREEN_ON`, `SET_BRIGHTNESS`, `UPDATE_HA`, `UPDATE_PANEL`, `FACTORY_RESET` |
+| `PanelCommandReceiver` | HA-driven commands: `SCREEN_OFF`, `SCREEN_ON`, `SET_BRIGHTNESS`, `NAVIGATE`, `REBOOT`, `MAINTENANCE_ON`, `MAINTENANCE_OFF`, `UPDATE_HA`, `UPDATE_PANEL`, `FACTORY_RESET` |
 | `provisioning/make-qr.sh` | Renders the provisioning QR from your local config |
 
 Development builds: `export JAVA_HOME=$(/usr/libexec/java_home -v 17+)` (or a

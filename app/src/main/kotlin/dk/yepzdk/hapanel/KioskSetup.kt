@@ -27,6 +27,9 @@ object KioskSetup {
     // the key is annotated @Readable, so apps may read it by name.
     private const val USER_SETUP_COMPLETE = "user_setup_complete"
 
+    /** Boot count at which maintenance mode was turned on; absent when off. */
+    private const val MAINTENANCE_BOOT = "maintenance_boot"
+
     /** Provisioning entry point: store the QR extras, apply policies, install the HA app. */
     fun run(context: Context, adminExtras: PersistableBundle?) {
         persistExtras(context, adminExtras)
@@ -101,14 +104,46 @@ object KioskSetup {
     fun isSetupComplete(context: Context): Boolean =
         Settings.Secure.getInt(context.contentResolver, USER_SETUP_COMPLETE, 0) == 1
 
-    fun haApkUrl(context: Context): String? =
+    fun haApkUrl(context: Context): String? = prefs(context).getString(EXTRA_HA_APK_URL, null)
+
+    /**
+     * Maintenance mode: HA runs unpinned and the status bar works, so Android
+     * settings are reachable. Tied to the current boot: a restart ends it, so a
+     * forgotten MAINTENANCE_OFF cannot leave a panel unlocked.
+     */
+    fun isMaintenance(context: Context): Boolean =
+        prefs(context).getInt(MAINTENANCE_BOOT, -1) == bootCount(context)
+
+    /** @return false if we are not device owner (nothing changed). */
+    fun startMaintenance(context: Context): Boolean {
+        val dpm = context.getSystemService(DevicePolicyManager::class.java)
+        if (!dpm.isDeviceOwnerApp(context.packageName)) return false
+        val admin = AdminReceiver.component(context)
+        // Synchronous: the HA relaunch that follows reads this flag.
+        prefs(context).edit().putInt(MAINTENANCE_BOOT, bootCount(context)).commit()
+        // Android closes a pinned task whose package leaves the allowlist; HOME
+        // (the trampoline) then reopens HA unpinned.
+        dpm.setLockTaskPackages(admin, emptyArray())
+        dpm.setStatusBarDisabled(admin, false)
+        Log.i(TAG, "Maintenance mode on")
+        return true
+    }
+
+    /** @return false if we are not device owner (nothing applied). */
+    fun stopMaintenance(context: Context): Boolean {
+        prefs(context).edit().remove(MAINTENANCE_BOOT).commit()
+        return applyPolicies(context)
+    }
+
+    private fun bootCount(context: Context): Int =
+        Settings.Global.getInt(context.contentResolver, Settings.Global.BOOT_COUNT, 0)
+
+    private fun prefs(context: Context) =
         context.getSharedPreferences("config", Context.MODE_PRIVATE)
-            .getString(EXTRA_HA_APK_URL, null)
 
     private fun persistExtras(context: Context, extras: PersistableBundle?) {
         if (extras == null) return
-        val prefs = context.getSharedPreferences("config", Context.MODE_PRIVATE)
-        prefs.edit().apply {
+        prefs(context).edit().apply {
             extras.keySet().forEach { key -> putString(key, extras.getString(key)) }
             apply()
         }

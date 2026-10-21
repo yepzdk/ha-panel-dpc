@@ -18,10 +18,10 @@ android {
         applicationId = "dk.yepzdk.hapanel"
         minSdk = 28
         targetSdk = 36
-        // 5, 8, 10 and 11 went to the 0.4.1-rc.1, 0.5.0-rc.1, 0.6.0-rc.1 and
-        // 0.6.0-rc.2 OTA test builds.
-        versionCode = 12
-        versionName = "0.6.0-rc.3"
+        // 5, 8, 10, 11 and 12 went to the 0.4.1-rc.1, 0.5.0-rc.1 and
+        // 0.6.0-rc.1 to rc.3 OTA test builds.
+        versionCode = 13
+        versionName = "0.6.0"
     }
 
     signingConfigs {

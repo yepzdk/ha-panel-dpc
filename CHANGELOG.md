@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-21
+
 ### Added
 
 - Panels report their state (versions, screen, brightness, maintenance mode) to the Smart Panel integration once it links them, on every change and every 15 minutes.
@@ -15,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Plain `http://` connections are allowed, so panels can report to a Home Assistant on the local network without HTTPS. This also allows `http://` download URLs.
+- The docs advise against `SCREEN_OFF` for now: a panel can stay unreachable after it until it restarts ([home-assistant/core#176371](https://github.com/home-assistant/core/issues/176371)).
 
 ### Fixed
 
@@ -85,7 +88,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Provisioning tooling: QR payload template and `make-qr.sh`, plus signing config.
 - Docs: README provisioning walkthrough and ready-to-paste HA automations.
 
-[Unreleased]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/yepzdk/ha-panel-dpc/compare/v0.4.0...v0.4.1

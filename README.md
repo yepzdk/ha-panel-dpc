@@ -62,6 +62,10 @@ cp local.env.example local.env   # fill in Wi-Fi credentials + your APK URL
 ./make-qr.sh                     # writes qr.png
 ```
 
+Set the optional `HA_URL` to your HA server (e.g. `http://homeassistant.local:8123`)
+and the HA app opens its onboarding with that server filled in on the panel's
+first launch, so only the login is left.
+
 `local.env`, the generated payload, and the QR are gitignored — the payload
 contains your Wi-Fi password.
 
@@ -74,7 +78,14 @@ contains your Wi-Fi password.
    and the DPC installs the HA app in the background.
 4. Finish the remaining setup wizard screens. The DPC pins the HA app only
    once setup is complete — a wizard left unfinished boots back to the
-   welcome screen on the next restart.
+   welcome screen on the next restart. If the wizard asked for a Wi-Fi
+   before the QR scanner, the network picked there does not stick: once
+   setup is complete, the DPC forgets every saved network except the QR's,
+   so the panel cannot rejoin, say, an isolated guest network after a
+   restart. Listing saved networks needs location access, so the DPC grants
+   it to itself for this one step and, if location is off, turns it on for
+   the moment it takes (Android 11+; on 9 and 10 the step is skipped with
+   location off). Networks added later, e.g. in maintenance mode, stay.
 5. Log in with your dedicated dashboard user, pick the default dashboard.
 6. In Settings → Companion app, enable **Fullscreen** — this hides the
    navigation bar (the back arrow is already inert in lock task mode, but
@@ -142,6 +153,11 @@ next sensor update, so allow a few seconds.
 3. **Screen off**, then **screen on**. Off is a black overlay with the
    backlight at its minimum; the device stays awake, so HA can still wake it.
    A tap on the panel wakes it too.
+
+   **Avoid for now:** after a screen off, a panel can stay unreachable until
+   it restarts, and a tap may not wake it. See
+   [home-assistant/core#176371](https://github.com/home-assistant/core/issues/176371);
+   dim with `SET_BRIGHTNESS` instead.
 
    ```yaml
    action: notify.mobile_app_kitchen_panel
@@ -253,7 +269,50 @@ next sensor update, so allow a few seconds.
    higher `versionCode`. Android refuses anything else, and the panel keeps
    running the version it has.
 
-9. **Factory reset** — wipes the panel back to the welcome screen. Run last:
+9. **Link to a status webhook** — the panel then POSTs its state as JSON
+   (versions, maintenance, screen off, brightness, device model) to `url`:
+   right away, after every screen, brightness or maintenance change, after a
+   restart or an update of either app, and every 15 minutes. The Smart Panel
+   integration sends this itself; to watch the reports by hand, point `url` at
+   an automation with a webhook trigger. `ref` (letters, digits, `_`, `-`, up
+   to 64) is echoed in every report. Keep the `:String` suffixes: the URL
+   contains `:`, and a `ref` of only digits would otherwise arrive as a number:
+
+   ```yaml
+   action: notify.mobile_app_kitchen_panel
+   data:
+     message: command_broadcast_intent
+     data:
+       intent_package_name: dk.yepzdk.hapanel
+       intent_action: dk.yepzdk.hapanel.LINK
+       intent_extras: "ref:kitchen:String,url:http://homeassistant.local:8123/api/webhook/<webhook_id>:String"
+   ```
+
+   An invalid `ref` or a URL that is not `http(s)` is ignored. Without a
+   working network the report is skipped; the next one carries fresh state.
+
+10. **Report now**, then **unlink** — `REPORT` sends the state immediately;
+    `UNLINK` forgets the URL and stops all reports:
+
+    ```yaml
+    action: notify.mobile_app_kitchen_panel
+    data:
+      message: command_broadcast_intent
+      data:
+        intent_package_name: dk.yepzdk.hapanel
+        intent_action: dk.yepzdk.hapanel.REPORT
+    ```
+
+    ```yaml
+    action: notify.mobile_app_kitchen_panel
+    data:
+      message: command_broadcast_intent
+      data:
+        intent_package_name: dk.yepzdk.hapanel
+        intent_action: dk.yepzdk.hapanel.UNLINK
+    ```
+
+11. **Factory reset** — wipes the panel back to the welcome screen. Run last:
 
    ```yaml
    action: notify.mobile_app_kitchen_panel
@@ -300,10 +359,13 @@ next sensor update, so allow a few seconds.
 | `GetProvisioningModeActivity` / `PolicyComplianceActivity` | Android 12+ QR provisioning flow |
 | `KioskSetup` | Applies all policies: lock task allowlist, persistent HOME, keyguard/status bar off, stay-on-while-plugged, no screen dimming |
 | `InstallService` | Downloads + silently installs the HA Companion APK, or a new version of the DPC itself |
-| `HomeActivity` | Persistent HOME trampoline — anything that lands on "home" re-pins the HA app (unpinned in maintenance mode) |
+| `WifiCleanup` | Once after setup: forgets every saved Wi-Fi network except the QR's (`wifi_ssid` admin extra) |
+| `HomeActivity` | Persistent HOME trampoline — anything that lands on "home" re-pins the HA app (unpinned in maintenance mode); the first launch after provisioning opens the HA app's onboarding at the QR's `ha_url` admin extra, when set |
 | `ScreenOffActivity` | Black overlay for `SCREEN_OFF`; the device stays awake so HA can wake it again |
 | `PackageReplacedReceiver` | After a DPC update: re-applies policies and re-pins the dashboard |
-| `PanelCommandReceiver` | HA-driven commands: `SCREEN_OFF`, `SCREEN_ON`, `SET_BRIGHTNESS`, `NAVIGATE`, `REBOOT`, `MAINTENANCE_ON`, `MAINTENANCE_OFF`, `UPDATE_HA`, `UPDATE_PANEL`, `FACTORY_RESET` |
+| `PanelCommandReceiver` | HA-driven commands: `SCREEN_OFF`, `SCREEN_ON`, `SET_BRIGHTNESS`, `NAVIGATE`, `REBOOT`, `MAINTENANCE_ON`, `MAINTENANCE_OFF`, `UPDATE_HA`, `UPDATE_PANEL`, `FACTORY_RESET`, `LINK`, `UNLINK`, `REPORT` |
+| `StatusReporter` | While linked (`LINK`): POSTs the panel's state as JSON to the status webhook |
+| `StatusJobService` / `BootReceiver` | 15-minute heartbeat report, and the report after a restart once the network is up |
 | `provisioning/make-qr.sh` | Renders the provisioning QR from your local config |
 
 Development builds: `export JAVA_HOME=$(/usr/libexec/java_home -v 17+)` (or a

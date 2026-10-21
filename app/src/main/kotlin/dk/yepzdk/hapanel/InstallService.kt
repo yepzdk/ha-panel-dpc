@@ -153,6 +153,8 @@ class InstallService : Service() {
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                 )
             }
+            // The new HA app version; silent while provisioning (not linked yet).
+            StatusReporter.sendFromReceiver(this, context, StatusReporter.EVENT_UPDATED)
         }
     }
 

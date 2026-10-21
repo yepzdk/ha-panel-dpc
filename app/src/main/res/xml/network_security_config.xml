@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status reports POST to the HA instance's webhook URL. Many HA instances on
+     a LAN serve plain http:// (e.g. http://homeassistant.local:8123), which
+     Android blocks by default since API 28. The URL comes from the Smart Panel
+     integration (LINK) and can be any host, so cleartext is allowed app-wide;
+     HTTPS URLs are still verified against the system trust store. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

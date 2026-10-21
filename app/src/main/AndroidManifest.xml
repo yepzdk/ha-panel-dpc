@@ -5,6 +5,15 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Boot status report, and the persisted heartbeat job across restarts. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- One-off cleanup of saved Wi-Fi networks after provisioning (WifiCleanup).
+         Listing saved networks requires location access; the DPC grants itself
+         these only for the cleanup. -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <!-- Android 11+ package visibility: without this, the DPC cannot resolve
          the HA app's launch intent and the kiosk never starts. -->
@@ -12,7 +21,11 @@
         <package android:name="io.homeassistant.companion.android.minimal" />
     </queries>
 
-    <application android:label="HA Panel DPC">
+    <!-- Cleartext allowed: status reports go to the HA instance, which on a
+         LAN is commonly plain http:// (see res/xml/network_security_config.xml). -->
+    <application
+        android:label="HA Panel DPC"
+        android:networkSecurityConfig="@xml/network_security_config">
 
         <receiver
             android:name=".AdminReceiver"
@@ -78,6 +91,9 @@
                 <action android:name="dk.yepzdk.hapanel.UPDATE_HA" />
                 <action android:name="dk.yepzdk.hapanel.UPDATE_PANEL" />
                 <action android:name="dk.yepzdk.hapanel.FACTORY_RESET" />
+                <action android:name="dk.yepzdk.hapanel.LINK" />
+                <action android:name="dk.yepzdk.hapanel.UNLINK" />
+                <action android:name="dk.yepzdk.hapanel.REPORT" />
             </intent-filter>
         </receiver>
 
@@ -98,6 +114,20 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Heartbeat and boot status reports to the Smart Panel integration. -->
+        <service
+            android:name=".StatusJobService"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
 
         <service
             android:name=".InstallService"

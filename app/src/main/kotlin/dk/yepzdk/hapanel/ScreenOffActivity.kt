@@ -25,6 +25,9 @@ import android.view.WindowManager
  *
  * The system brightness setting is untouched, so SET_BRIGHTNESS while blanked
  * applies once the panel wakes.
+ *
+ * Reports every overlay change (SCREEN_OFF, SCREEN_ON, tap) to the Smart
+ * Panel integration from here, once it has taken effect.
  */
 class ScreenOffActivity : Activity() {
 
@@ -45,11 +48,27 @@ class ScreenOffActivity : Activity() {
             },
         )
         hideSystemBars()
+        // Not on recreation (rotation): the overlay was already up.
+        if (savedInstanceState == null) {
+            StatusReporter.send(this, StatusReporter.EVENT_CHANGE, screenOff = true)
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (intent.action == ACTION_DISMISS) finish()
+        if (intent.action == ACTION_DISMISS) {
+            finish()
+        } else {
+            // SCREEN_OFF while already blanked: nothing changed, but confirm the state.
+            StatusReporter.send(this, StatusReporter.EVENT_CHANGE, screenOff = true)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // The task list may still hold this task while it tears down, so the
+        // state is passed explicitly.
+        if (isFinishing) StatusReporter.send(this, StatusReporter.EVENT_CHANGE, screenOff = false)
     }
 
     @Suppress("DEPRECATION")
@@ -73,15 +92,21 @@ class ScreenOffActivity : Activity() {
             context.startActivity(intent(context))
         }
 
-        /** Finish the overlay if it is up; no-op otherwise. */
-        fun dismiss(context: Context) {
-            if (isShowing(context)) context.startActivity(intent(context).setAction(ACTION_DISMISS))
+        /**
+         * Finish the overlay if it is up; no-op otherwise.
+         * @return true if the overlay was up and is now being dismissed.
+         */
+        fun dismiss(context: Context): Boolean {
+            if (!isShowing(context)) return false
+            context.startActivity(intent(context).setAction(ACTION_DISMISS))
+            return true
         }
 
         private fun intent(context: Context) =
             Intent(context, ScreenOffActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-        private fun isShowing(context: Context): Boolean =
+        /** True while the overlay's task exists, i.e. the screen is blanked. */
+        fun isShowing(context: Context): Boolean =
             context.getSystemService(ActivityManager::class.java).appTasks.any { task ->
                 // A task can vanish between listing and reading it.
                 runCatching { task.taskInfo.baseActivity?.className }.getOrNull() ==

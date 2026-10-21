@@ -12,9 +12,9 @@ import android.widget.TextView
 
 /**
  * Persistent HOME trampoline: every landing on "home" (boot, HA app update,
- * crash) relaunches the HA app pinned in lock task. Waits while the setup
- * wizard is unfinished; if the app is missing, kicks the installer. Retries
- * until both conditions clear.
+ * crash) relaunches the HA app pinned in lock task, or unpinned in
+ * maintenance mode. Waits while the setup wizard is unfinished; if the app is
+ * missing, kicks the installer. Retries until both conditions clear.
  */
 class HomeActivity : Activity() {
 
@@ -39,15 +39,17 @@ class HomeActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        val maintenance = KioskSetup.isMaintenance(this)
         // Self-heal for the adb `dpm set-device-owner` path, where no
         // provisioning callback ever fires: apply policies on first landing.
+        // Also re-locks a panel restarted during maintenance mode.
         val dpm = getSystemService(android.app.admin.DevicePolicyManager::class.java)
-        if (dpm.isDeviceOwnerApp(packageName) &&
+        if (!maintenance && dpm.isDeviceOwnerApp(packageName) &&
             !dpm.isLockTaskPermitted(KioskSetup.HA_PACKAGE)
         ) {
             KioskSetup.applyPolicies(this)
         }
-        if (launchIfReady()) return
+        if (launchIfReady(maintenance)) return
         if (packageManager.getLaunchIntentForPackage(KioskSetup.HA_PACKAGE) == null) {
             InstallService.startHa(this)
         }
@@ -60,7 +62,7 @@ class HomeActivity : Activity() {
     }
 
     /** @return true if setup is complete and the HA app was found and launched. */
-    private fun launchIfReady(): Boolean {
+    private fun launchIfReady(maintenance: Boolean = KioskSetup.isMaintenance(this)): Boolean {
         if (!KioskSetup.isSetupComplete(this)) {
             status.text = "Waiting for device setup to finish…"
             return false
@@ -69,6 +71,10 @@ class HomeActivity : Activity() {
         if (launch == null) {
             status.text = "Installing Home Assistant…"
             return false
+        }
+        if (maintenance) {
+            startActivity(launch)
+            return true
         }
         val options = ActivityOptions.makeBasic().apply { setLockTaskEnabled(true) }
         try {

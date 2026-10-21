@@ -71,6 +71,10 @@
                 <action android:name="dk.yepzdk.hapanel.SCREEN_OFF" />
                 <action android:name="dk.yepzdk.hapanel.SCREEN_ON" />
                 <action android:name="dk.yepzdk.hapanel.SET_BRIGHTNESS" />
+                <action android:name="dk.yepzdk.hapanel.NAVIGATE" />
+                <action android:name="dk.yepzdk.hapanel.REBOOT" />
+                <action android:name="dk.yepzdk.hapanel.MAINTENANCE_ON" />
+                <action android:name="dk.yepzdk.hapanel.MAINTENANCE_OFF" />
                 <action android:name="dk.yepzdk.hapanel.UPDATE_HA" />
                 <action android:name="dk.yepzdk.hapanel.UPDATE_PANEL" />
                 <action android:name="dk.yepzdk.hapanel.FACTORY_RESET" />

@@ -31,12 +31,34 @@ class StatusJobService : JobService() {
         private const val JOB_BOOT = 2
         private const val EXTRA_EVENT = "event"
 
-        /** Start the heartbeat, replacing any scheduled one. */
+        /** Contract: every 15 minutes. Both values are the JobScheduler minimums. */
+        private const val HEARTBEAT_MS = 15 * 60 * 1000L
+        private const val HEARTBEAT_FLEX_MS = 5 * 60 * 1000L
+
+        /**
+         * Start the heartbeat unless it already runs. Called from LINK, boot
+         * and package replaced; each of those sends its own report, so the
+         * first heartbeat must not follow right away.
+         *
+         * The first run of a periodic job falls in the flex window at the end
+         * of the first period (AOSP JobStatus.createFromJobInfo: earliest =
+         * now + period - flex). With the default flex, which equals the
+         * period, it would run at once; a 5-minute flex puts it 10-15 minutes
+         * after scheduling, and every later run 15 minutes apart.
+         */
         fun scheduleHeartbeat(context: Context) {
+            val pending = context.getSystemService(JobScheduler::class.java).getPendingJob(JOB_HEARTBEAT)
+            // Rescheduling resets the period, so keep a job that matches; one
+            // from an older build with other timing is replaced.
+            if (pending != null && pending.intervalMillis == HEARTBEAT_MS &&
+                pending.flexMillis == HEARTBEAT_FLEX_MS && pending.isPersisted
+            ) {
+                return
+            }
             schedule(
                 context,
                 job(context, JOB_HEARTBEAT, StatusReporter.EVENT_HEARTBEAT)
-                    .setPeriodic(JobInfo.getMinPeriodMillis())
+                    .setPeriodic(HEARTBEAT_MS, HEARTBEAT_FLEX_MS)
                     // Survives reboots; needs RECEIVE_BOOT_COMPLETED.
                     .setPersisted(true)
                     .build(),

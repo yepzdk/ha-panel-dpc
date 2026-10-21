@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Plain `http://` connections are allowed, so panels can report to a Home Assistant on the local network without HTTPS. This also allows `http://` download URLs.
 
+### Fixed
+
+- After setup, the panel forgets every saved Wi-Fi network except the one from the provisioning QR, so it can no longer rejoin a network picked earlier in the setup wizard (such as a guest network) after a restart.
+
 ## [0.5.0] - 2026-10-21
 
 ### Added

@@ -71,6 +71,8 @@ class HomeActivity : Activity() {
             status.text = "Waiting for device setup to finish…"
             return false
         }
+        // Every network added during setup is saved by now; runs once.
+        WifiCleanup.runOnce(this)
         val launch = packageManager.getLaunchIntentForPackage(KioskSetup.HA_PACKAGE)
         if (launch == null) {
             status.text = "Installing Home Assistant…"

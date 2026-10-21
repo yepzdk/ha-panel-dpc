@@ -7,6 +7,13 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Boot status report, and the persisted heartbeat job across restarts. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- One-off cleanup of saved Wi-Fi networks after provisioning (WifiCleanup).
+         Listing saved networks requires location access; the DPC grants itself
+         these only for the cleanup. -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <!-- Android 11+ package visibility: without this, the DPC cannot resolve
          the HA app's launch intent and the kiosk never starts. -->

@@ -26,11 +26,17 @@ object KioskSetup {
     /** Admin-extras key for the HA server URL the HA app's onboarding starts with (optional). */
     const val EXTRA_HA_URL = "ha_url"
 
+    /** Admin-extras key for the QR's Wi-Fi SSID, exact and unquoted (optional). */
+    const val EXTRA_WIFI_SSID = "wifi_ssid"
+
     /**
      * Set once the HA invite link was opened. Never cleared: every QR
      * provisioning starts from a factory reset, which wipes it.
      */
     private const val INVITE_OPENED = "invite_opened"
+
+    /** Set once saved networks other than the QR's were cleaned up; same lifetime as above. */
+    private const val WIFI_CLEANED = "wifi_cleaned"
 
     /** Smart Panel integration link, set by LINK; both absent when unlinked. */
     private const val LINK_REF = "link_ref"
@@ -126,6 +132,15 @@ object KioskSetup {
     fun markInviteOpened(context: Context) {
         // Synchronous: the next HOME landing must not open the invite again.
         prefs(context).edit().putBoolean(INVITE_OPENED, true).commit()
+    }
+
+    fun wifiSsid(context: Context): String? = prefs(context).getString(EXTRA_WIFI_SSID, null)
+
+    fun isWifiCleaned(context: Context): Boolean = prefs(context).getBoolean(WIFI_CLEANED, false)
+
+    fun markWifiCleaned(context: Context) {
+        // Synchronous: the next HOME landing must not clean up again.
+        prefs(context).edit().putBoolean(WIFI_CLEANED, true).commit()
     }
 
     /** Integration ref from LINK, or null when unlinked. */

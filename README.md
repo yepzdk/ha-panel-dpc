@@ -78,7 +78,14 @@ contains your Wi-Fi password.
    and the DPC installs the HA app in the background.
 4. Finish the remaining setup wizard screens. The DPC pins the HA app only
    once setup is complete — a wizard left unfinished boots back to the
-   welcome screen on the next restart.
+   welcome screen on the next restart. If the wizard asked for a Wi-Fi
+   before the QR scanner, the network picked there does not stick: once
+   setup is complete, the DPC forgets every saved network except the QR's,
+   so the panel cannot rejoin, say, an isolated guest network after a
+   restart. Listing saved networks needs location access, so the DPC grants
+   it to itself for this one step and, if location is off, turns it on for
+   the moment it takes (Android 11+; on 9 and 10 the step is skipped with
+   location off). Networks added later, e.g. in maintenance mode, stay.
 5. Log in with your dedicated dashboard user, pick the default dashboard.
 6. In Settings → Companion app, enable **Fullscreen** — this hides the
    navigation bar (the back arrow is already inert in lock task mode, but
@@ -347,6 +354,7 @@ next sensor update, so allow a few seconds.
 | `GetProvisioningModeActivity` / `PolicyComplianceActivity` | Android 12+ QR provisioning flow |
 | `KioskSetup` | Applies all policies: lock task allowlist, persistent HOME, keyguard/status bar off, stay-on-while-plugged, no screen dimming |
 | `InstallService` | Downloads + silently installs the HA Companion APK, or a new version of the DPC itself |
+| `WifiCleanup` | Once after setup: forgets every saved Wi-Fi network except the QR's (`wifi_ssid` admin extra) |
 | `HomeActivity` | Persistent HOME trampoline — anything that lands on "home" re-pins the HA app (unpinned in maintenance mode); the first launch after provisioning opens the HA app's onboarding at the QR's `ha_url` admin extra, when set |
 | `ScreenOffActivity` | Black overlay for `SCREEN_OFF`; the device stays awake so HA can wake it again |
 | `PackageReplacedReceiver` | After a DPC update: re-applies policies and re-pins the dashboard |

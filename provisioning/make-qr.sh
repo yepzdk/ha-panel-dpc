@@ -29,7 +29,8 @@ export HA_URL="${HA_URL:-}"
 python3 > payload.json <<'EOF'
 import json, os
 e = os.environ
-admin_extras = {"ha_apk_url": e["HA_APK_URL"]}
+# wifi_ssid: the DPC forgets every other saved network after setup.
+admin_extras = {"ha_apk_url": e["HA_APK_URL"], "wifi_ssid": e["WIFI_SSID"]}
 if e["HA_URL"]:
     admin_extras["ha_url"] = e["HA_URL"]
 print(json.dumps({

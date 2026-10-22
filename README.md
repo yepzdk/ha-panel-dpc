@@ -86,7 +86,9 @@ contains your Wi-Fi password.
    it to itself for this one step and, if location is off, turns it on for
    the moment it takes (Android 11+; on 9 and 10 the step is skipped with
    location off). Networks added later, e.g. in maintenance mode, stay.
-5. Log in with your dedicated dashboard user, pick the default dashboard.
+5. Log in with your dedicated dashboard user, pick the default dashboard. How
+   to set up a user, default dashboard and kiosk view per panel:
+   [Setting up users and dashboards for panels](https://github.com/yepzdk/ha-smart-panel/blob/main/docs/panel-setup.md).
 6. In Settings → Companion app, enable **Fullscreen** — this hides the
    navigation bar (the back arrow is already inert in lock task mode, but
    fullscreen removes it entirely). Do this while the sidebar is reachable:

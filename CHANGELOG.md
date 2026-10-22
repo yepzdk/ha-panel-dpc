@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Command and automation examples use placeholders such as `notify.mobile_app_<your_panel>` instead of example device names, and point to the Smart Panel integration's entities and actions.
+- The provisioning steps link to the Smart Panel guide for setting up a user, default dashboard and kiosk view per panel.
 
 ## [0.6.0] - 2026-10-21
 

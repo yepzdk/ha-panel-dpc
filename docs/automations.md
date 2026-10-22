@@ -1,14 +1,25 @@
 # Home Assistant automations for the panel
 
-All control goes through the Companion app's notify service. Find the panel's
-service name under **Developer tools → Actions → notify.mobile_app_***.
+All control goes through the Companion app's notify action. Find the panel's
+action name under **Developer tools → Actions → notify.mobile_app_***.
+
+> **Using the [Smart Panel integration](https://github.com/yepzdk/ha-smart-panel)?**
+> Use its entities and actions in automations instead (for example
+> `smart_panel.navigate`, or the panel's Brightness and Restart entities):
+> they target the panel by device, and need neither a notify action nor the
+> command format below.
 
 Prerequisite: the panel's Companion app must keep its WebSocket connection
 always on (Settings → Companion app → Troubleshooting → Persistent connection
-= **Always**). This is the default on the minimal flavor the DPC installs, and
-it is what delivers commands without Google Play Services.
+= **Always**). It is what delivers commands without Google Play Services. The
+Smart Panel integration sets it when it links a panel; without the integration,
+set it by hand on each panel.
 
-Replace `notify.mobile_app_entrance_panel` with your panel's service.
+The examples use placeholders in angle brackets. Replace them with your own:
+`notify.mobile_app_<your_panel>` with the panel's notify action, and
+`<your_presence_sensor>`, `<your_alarm_panel>` and `<your_light_sensor>` with
+your entity IDs. Keep `dk.yepzdk.hapanel` as it is: it is the panel app's
+package name, the same on every panel.
 
 ## Wake screen on motion / presence (DPC broadcast)
 
@@ -17,10 +28,10 @@ automation:
   - alias: "Panel: wake on presence"
     triggers:
       - trigger: state
-        entity_id: binary_sensor.entrance_presence
+        entity_id: binary_sensor.<your_presence_sensor>
         to: "on"
     actions:
-      - action: notify.mobile_app_entrance_panel
+      - action: notify.mobile_app_<your_panel>
         data:
           message: command_broadcast_intent
           data:
@@ -46,10 +57,10 @@ automation:
   - alias: "Panel: screen off when alarm armed"
     triggers:
       - trigger: state
-        entity_id: alarm_control_panel.home
+        entity_id: alarm_control_panel.<your_alarm_panel>
         to: armed_away
     actions:
-      - action: notify.mobile_app_entrance_panel
+      - action: notify.mobile_app_<your_panel>
         data:
           message: command_broadcast_intent
           data:
@@ -72,10 +83,10 @@ automation:
   - alias: "Panel: dim at night"
     triggers:
       - trigger: numeric_state
-        entity_id: sensor.entrance_panel_light_sensor
+        entity_id: sensor.<your_light_sensor>
         below: 10
     actions:
-      - action: notify.mobile_app_entrance_panel
+      - action: notify.mobile_app_<your_panel>
         data:
           message: command_broadcast_intent
           data:
@@ -85,10 +96,10 @@ automation:
   - alias: "Panel: brighten in daylight"
     triggers:
       - trigger: numeric_state
-        entity_id: sensor.entrance_panel_light_sensor
+        entity_id: sensor.<your_light_sensor>
         above: 50
     actions:
-      - action: notify.mobile_app_entrance_panel
+      - action: notify.mobile_app_<your_panel>
         data:
           message: command_broadcast_intent
           data:
@@ -114,7 +125,7 @@ automation:
       - trigger: time
         at: "04:00:00"
     actions:
-      - action: notify.mobile_app_entrance_panel
+      - action: notify.mobile_app_<your_panel>
         data:
           message: command_broadcast_intent
           data:
@@ -132,10 +143,10 @@ release rather than on a schedule:
 
 ```yaml
 script:
-  update_entrance_panel_dpc:
-    alias: "Update entrance panel DPC"
+  update_panel_app:
+    alias: "Update the panel app"
     sequence:
-      - action: notify.mobile_app_entrance_panel
+      - action: notify.mobile_app_<your_panel>
         data:
           message: command_broadcast_intent
           data:
@@ -151,10 +162,10 @@ manually when re-testing provisioning:
 
 ```yaml
 script:
-  reset_entrance_panel:
-    alias: "Factory reset entrance panel"
+  factory_reset_panel:
+    alias: "Factory reset the panel"
     sequence:
-      - action: notify.mobile_app_entrance_panel
+      - action: notify.mobile_app_<your_panel>
         data:
           message: command_broadcast_intent
           data:

@@ -109,12 +109,18 @@ Works only on a freshly reset device with no accounts added.
 
 ## Testing panel commands
 
+> **Using the [Smart Panel integration](https://github.com/yepzdk/ha-smart-panel)?**
+> Use its entities and actions instead (for example `smart_panel.navigate`):
+> they target the panel by device, and need neither a notify service nor the
+> command format below.
+
 Run each action from **Developer tools → Actions** (YAML mode). Replace
-`notify.mobile_app_kitchen_panel` with the panel's service: find the device
-under Settings → Devices & services → Mobile App. Every provisioning registers
-a new device, so delete stale entries and use the newest — a command sent to a
-stale entry silently goes nowhere. For automations, see
-[docs/automations.md](docs/automations.md).
+`notify.mobile_app_<your_panel>` with the panel's notify action: find the
+device under Settings → Devices & services → Mobile App. Every provisioning
+registers a new device, so delete stale entries and use the newest — a command
+sent to a stale entry silently goes nowhere. Keep `dk.yepzdk.hapanel` as it
+is: it is the panel app's package name, the same on every panel. For
+automations, see [docs/automations.md](docs/automations.md).
 
 Enable the panel's **Screen brightness** sensor (in the entity's settings in
 HA) to see results without walking to the panel. The app reports it on its
@@ -126,7 +132,7 @@ next sensor update, so allow a few seconds.
    below cannot work.
 
    ```yaml
-   action: notify.mobile_app_kitchen_panel
+   action: notify.mobile_app_<your_panel>
    data:
      message: command_broadcast_intent
      data:
@@ -141,7 +147,7 @@ next sensor update, so allow a few seconds.
 2. **Brightness** 0–255, or `auto` to hand control back to the light sensor:
 
    ```yaml
-   action: notify.mobile_app_kitchen_panel
+   action: notify.mobile_app_<your_panel>
    data:
      message: command_broadcast_intent
      data:
@@ -160,7 +166,7 @@ next sensor update, so allow a few seconds.
    dim with `SET_BRIGHTNESS` instead.
 
    ```yaml
-   action: notify.mobile_app_kitchen_panel
+   action: notify.mobile_app_<your_panel>
    data:
      message: command_broadcast_intent
      data:
@@ -169,7 +175,7 @@ next sensor update, so allow a few seconds.
    ```
 
    ```yaml
-   action: notify.mobile_app_kitchen_panel
+   action: notify.mobile_app_<your_panel>
    data:
      message: command_broadcast_intent
      data:
@@ -185,7 +191,7 @@ next sensor update, so allow a few seconds.
    sidebar, and `?disable_km` skips the kiosk-mode plugin for one load:
 
    ```yaml
-   action: notify.mobile_app_kitchen_panel
+   action: notify.mobile_app_<your_panel>
    data:
      message: command_broadcast_intent
      data:
@@ -201,7 +207,7 @@ next sensor update, so allow a few seconds.
    restart, so a panel cannot be left unlocked by mistake:
 
    ```yaml
-   action: notify.mobile_app_kitchen_panel
+   action: notify.mobile_app_<your_panel>
    data:
      message: command_broadcast_intent
      data:
@@ -210,7 +216,7 @@ next sensor update, so allow a few seconds.
    ```
 
    ```yaml
-   action: notify.mobile_app_kitchen_panel
+   action: notify.mobile_app_<your_panel>
    data:
      message: command_broadcast_intent
      data:
@@ -222,7 +228,7 @@ next sensor update, so allow a few seconds.
    panel shows why:
 
    ```yaml
-   action: notify.mobile_app_kitchen_panel
+   action: notify.mobile_app_<your_panel>
    data:
      message: command_broadcast_intent
      data:
@@ -234,7 +240,7 @@ next sensor update, so allow a few seconds.
    disappears while it reinstalls, then HA comes back pinned:
 
    ```yaml
-   action: notify.mobile_app_kitchen_panel
+   action: notify.mobile_app_<your_panel>
    data:
      message: command_broadcast_intent
      data:
@@ -248,7 +254,7 @@ next sensor update, so allow a few seconds.
    the reason:
 
    ```yaml
-   action: notify.mobile_app_kitchen_panel
+   action: notify.mobile_app_<your_panel>
    data:
      message: command_broadcast_intent
      data:
@@ -279,13 +285,13 @@ next sensor update, so allow a few seconds.
    contains `:`, and a `ref` of only digits would otherwise arrive as a number:
 
    ```yaml
-   action: notify.mobile_app_kitchen_panel
+   action: notify.mobile_app_<your_panel>
    data:
      message: command_broadcast_intent
      data:
        intent_package_name: dk.yepzdk.hapanel
        intent_action: dk.yepzdk.hapanel.LINK
-       intent_extras: "ref:kitchen:String,url:http://homeassistant.local:8123/api/webhook/<webhook_id>:String"
+       intent_extras: "ref:<your_ref>:String,url:http://homeassistant.local:8123/api/webhook/<webhook_id>:String"
    ```
 
    An invalid `ref` or a URL that is not `http(s)` is ignored. Without a
@@ -295,7 +301,7 @@ next sensor update, so allow a few seconds.
     `UNLINK` forgets the URL and stops all reports:
 
     ```yaml
-    action: notify.mobile_app_kitchen_panel
+    action: notify.mobile_app_<your_panel>
     data:
       message: command_broadcast_intent
       data:
@@ -304,7 +310,7 @@ next sensor update, so allow a few seconds.
     ```
 
     ```yaml
-    action: notify.mobile_app_kitchen_panel
+    action: notify.mobile_app_<your_panel>
     data:
       message: command_broadcast_intent
       data:
@@ -315,7 +321,7 @@ next sensor update, so allow a few seconds.
 11. **Factory reset** — wipes the panel back to the welcome screen. Run last:
 
    ```yaml
-   action: notify.mobile_app_kitchen_panel
+   action: notify.mobile_app_<your_panel>
    data:
      message: command_broadcast_intent
      data:
